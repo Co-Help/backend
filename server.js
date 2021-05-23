@@ -6,8 +6,14 @@ const port = process.env.PORT || 3000;
 // CORS
 app.use(require("cors")());
 
-// Test route
+app.use(express.json());
+
+// DB Initialization
+require("./db/mongoose")();
+
+// Routes
 app.use("/test", require("./routes/test"));
+app.use("/auth", require("./routes/auth"));
 
 app.listen(port, () => {
   console.log(`Server Listening on port ${port}`);
