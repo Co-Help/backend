@@ -1,6 +1,6 @@
 const router = require("express").Router();
 const { OAuth2Client } = require("google-auth-library");
-const { CLIENT_ID } = process.env;
+const { CLIENT_ID, ANDROID_CLIENT_ID } = process.env;
 const UserModel = require("../db/models/user");
 
 const { getAccessToken, getRefreshToken } = require("../manager/jwt");
@@ -11,6 +11,7 @@ const {
 } = require("../middlewares/auth");
 
 const client = new OAuth2Client(CLIENT_ID);
+const android_client = new OAuth2Client(ANDROID_CLIENT_ID);
 const tokenManager = new TokenManager();
 
 router.get("/login", async (req, res) => {
@@ -20,9 +21,15 @@ router.get("/login", async (req, res) => {
     user: null,
   };
   try {
-    const ret = await client.verifyIdToken({
+    const android_login =
+      req.body.android_login !== undefined ? req.body.android_login : false;
+
+    const currClient = android_login ? android_client : client;
+    const clientID = android_login ? ANDROID_CLIENT_ID : CLIENT_ID;
+
+    const ret = await currClient.verifyIdToken({
       idToken: req.body.idToken,
-      audience: CLIENT_ID,
+      audience: clientID,
     });
 
     const { email_verified, email, name, picture } = ret.payload;
