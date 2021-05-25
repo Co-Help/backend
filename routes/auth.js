@@ -56,10 +56,17 @@ router.get("/login", async (req, res) => {
       ...resBLK,
       message: "Logged in",
       user: {
+        id: tokenUser.id,
         name: tokenUser.name,
         email: tokenUser.email,
+        dob: tokenUser.dob,
         role: tokenUser.role,
         avatar: tokenUser.avatar,
+        is_profile_completed: tokenUser.is_profile_completed,
+        address: tokenUser?.address ?? null,
+        contact: tokenUser?.contact ?? null,
+        doctor_info:
+          tokenUser.role === "doctor" ? tokenUser?.doctor_info ?? null : null,
       },
     });
   } catch (err) {
