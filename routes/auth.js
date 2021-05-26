@@ -14,7 +14,7 @@ const client = new OAuth2Client(CLIENT_ID);
 const android_client = new OAuth2Client(ANDROID_CLIENT_ID);
 const tokenManager = new TokenManager();
 
-router.get("/login", async (req, res) => {
+router.post("/login", async (req, res) => {
   let resBLK = {
     access_token: null,
     refresh_token: null,
@@ -84,7 +84,7 @@ router.get("/login", async (req, res) => {
   }
 });
 
-router.get("/logout", check_for_refresh_token, async (req, res) => {
+router.post("/logout", check_for_refresh_token, async (req, res) => {
   const refresh_token = req.body?.refresh_token ?? null;
 
   if (!refresh_token) {
@@ -100,7 +100,7 @@ router.get("/logout", check_for_refresh_token, async (req, res) => {
   return res.status(200).json({ message: "User successfully logged out" });
 });
 
-router.get("/token", check_for_refresh_token, (req, res) => {
+router.post("/token", check_for_refresh_token, (req, res) => {
   if (!tokenManager.isTokenAvailable(req.body.refresh_token)) {
     return res.status(400).json({ message: "User already logged out." });
   }
