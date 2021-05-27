@@ -1,10 +1,11 @@
 const { Schema, SchemaTypes, model } = require("mongoose");
-const { PENDING_COLLECTION } = process.env;
+const { PENDING_COLLECTION, USER_COLLECTION } = process.env;
 
 const pendingSchema = Schema({
   name: { type: SchemaTypes.String, required: true },
   logo_url: SchemaTypes.String,
   helpline_no: SchemaTypes.Number,
+  user: { type: SchemaTypes.ObjectId, ref: USER_COLLECTION },
   address: {
     pinCode: { type: SchemaTypes.Number, required: true },
     state: { type: SchemaTypes.String, required: true },
