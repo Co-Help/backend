@@ -15,6 +15,8 @@ require("./db/mongoose")();
 app.use("/test", require("./routes/test"));
 app.use("/auth", require("./routes/auth"));
 app.use("/user", require("./routes/user"));
+app.use("/application", require("./routes/org/application"));
+app.use("/notification", require("./routes/system/notification"));
 
 app.listen(port, () => {
   console.log(`Server Listening on port ${port}`);
