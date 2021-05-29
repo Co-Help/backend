@@ -1,11 +1,12 @@
 const { Schema, SchemaTypes, model } = require("mongoose");
-const { PENDING_COLLECTION, USER_COLLECTION } = process.env;
+const { APPLICATION_COLLECTION, USER_COLLECTION } = process.env;
 
-const pendingSchema = Schema({
+const applicationSchema = Schema({
   name: { type: SchemaTypes.String, required: true },
   logo_url: SchemaTypes.String,
   helpline_no: SchemaTypes.Number,
   user: { type: SchemaTypes.ObjectId, ref: USER_COLLECTION },
+  status: { type: SchemaTypes.String, default: "pending" },
   address: {
     pinCode: { type: SchemaTypes.Number, required: true },
     state: { type: SchemaTypes.String, required: true },
@@ -24,4 +25,4 @@ const pendingSchema = Schema({
   info: { type: SchemaTypes.String, required: false },
 });
 
-module.exports = model(PENDING_COLLECTION, pendingSchema);
+module.exports = model(APPLICATION_COLLECTION, applicationSchema);
