@@ -27,9 +27,10 @@ class BAD extends Error {
 }
 
 class ERROR extends Error {
-  constructor(errMsg, status = 400) {
+  constructor(errMsg, status = 400, payload = {}) {
     super(`${errMsg}`);
     this.status = status;
+    this.payload = payload;
   }
 }
 
@@ -40,7 +41,7 @@ const HandleError = (err, res) => {
       err instanceof INVALID ||
       err instanceof BAD ||
       err instanceof ERROR:
-      return res.status(err.status).json({ msg: err.message });
+      return res.status(err.status).json({ msg: err.message, payload });
     default:
       return res.status(500).json({ msg: err?.message ?? err });
   }
