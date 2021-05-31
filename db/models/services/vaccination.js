@@ -12,6 +12,7 @@ const vaccineSchema = Schema({
   booked: { type: SchemaTypes.Boolean, default: false },
   buyer: { type: SchemaTypes.ObjectId, ref: USER_COLLECTION },
   info: { type: SchemaTypes.String, required: false },
+  batch_code: { type: SchemaTypes.String, required: true },
   schedules: {
     first_doze: {
       name: {

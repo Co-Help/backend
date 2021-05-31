@@ -11,6 +11,7 @@ const bloodProvideSchema = new Schema({
   buyer: { type: SchemaTypes.ObjectId, ref: USER_COLLECTION },
   booking_time: { type: SchemaTypes.Date, required: false },
   info: { type: SchemaTypes.String, required: false },
+  batch_code: { type: SchemaTypes.String, required: true },
 });
 
 module.exports = model(BLOOD_PROVIDE_COLLECTION, bloodProvideSchema);

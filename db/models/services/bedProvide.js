@@ -9,6 +9,7 @@ const bedProvideSchema = Schema({
   patient: { type: SchemaTypes.ObjectId, ref: USER_COLLECTION },
   booking_time: { type: SchemaTypes.Date, required: false },
   info: { type: SchemaTypes.String, required: false },
+  batch_code: { type: SchemaTypes.String, required: true },
 });
 
 module.exports = model(BED_PROVIDE_COLLECTION, bedProvideSchema);

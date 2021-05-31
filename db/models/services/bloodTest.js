@@ -10,6 +10,7 @@ const bloodTestSchema = new Schema({
   test_date: { type: SchemaTypes.Date, required: true },
   booking_date: { type: SchemaTypes.Date, required: false },
   info: { type: SchemaTypes.String, required: false },
+  batch_code: { type: SchemaTypes.String, required: true },
 });
 
 module.exports = model(BLOOD_TEST_COLLECTION, bloodTestSchema);
