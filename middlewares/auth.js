@@ -65,12 +65,16 @@ const allowUser = (req, res, next) => {
   verify_roles(res, next, req.user.role, ["user"]);
 };
 
+const allowDoctor = (req, res, next) => {
+  verify_roles(res, next, req.user.role, ["doctor"]);
+};
+
 const allowAdminOrg = (req, res, next) => {
   verify_roles(res, next, req.user.role, ["admin", "org"]);
 };
 
 const allowAll = (req, res, next) => {
-  verify_roles(res, next, req.user.role, ["admin", "org", "user"]);
+  verify_roles(res, next, req.user.role, ["admin", "org", "user", "doctor"]);
 };
 
 module.exports = {
@@ -79,6 +83,7 @@ module.exports = {
   allowAdmin,
   allowOrg,
   allowUser,
+  allowDoctor,
   allowAdminOrg,
   allowAll,
 };
