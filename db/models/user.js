@@ -1,5 +1,5 @@
 const { Schema, SchemaTypes, model } = require("mongoose");
-const { USER_COLLECTION } = process.env;
+const { USER_COLLECTION, ORG_COLLECTION } = process.env;
 
 const userSchema = Schema({
   name: { type: SchemaTypes.String, required: true },
@@ -21,6 +21,8 @@ const userSchema = Schema({
   doctor_info: {
     role: { type: SchemaTypes.String },
     is_profile_completed: { type: SchemaTypes.Boolean, default: false },
+    active: { type: SchemaTypes.Boolean, default: false },
+    org: { type: SchemaTypes.ObjectId, ref: ORG_COLLECTION },
     available: {
       morning: {
         from: SchemaTypes.Number,
