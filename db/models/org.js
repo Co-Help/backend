@@ -6,7 +6,12 @@ const orgSchema = Schema({
   logo_url: SchemaTypes.String,
   info: SchemaTypes.String,
   helpline_no: SchemaTypes.Number,
-  pass_key: { type: SchemaTypes.String, required: true },
+  user: { type: SchemaTypes.ObjectId, ref: USER_COLLECTION, required: true },
+  pass_key: {
+    type: SchemaTypes.String,
+    default: require("uuid").v4(),
+    required: true,
+  },
   address: {
     pinCode: { type: SchemaTypes.Number, required: true },
     state: { type: SchemaTypes.String, required: true },
