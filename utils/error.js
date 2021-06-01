@@ -41,7 +41,9 @@ const HandleError = (err, res) => {
       err instanceof INVALID ||
       err instanceof BAD ||
       err instanceof ERROR:
-      return res.status(err.status).json({ msg: err.message, payload });
+      return res
+        .status(err.status)
+        .json({ msg: err.message, payload: err?.payload ?? {} });
     default:
       return res.status(500).json({ msg: err?.message ?? err });
   }
