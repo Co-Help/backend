@@ -68,10 +68,32 @@ const _approveApplication = (req, res, next) => {
   }
 };
 
+const sendInvitation = [string_prop("id")];
+
+const _sendInvitation = (req, res, next) => {
+  if (valid_data(req.body, sendInvitation)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
+const joinOrg = [string_prop("pass_key")];
+
+const _joinOrg = (req, res, next) => {
+  if (valid_data(req.body, joinOrg)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
 module.exports = {
   _completeUserProfileProps,
   _middleware_setupUserProfile,
   _middleware_applyForOrg,
   _interactNotification,
   _approveApplication,
+  _sendInvitation,
+  _joinOrg,
 };

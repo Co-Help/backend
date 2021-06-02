@@ -16,6 +16,8 @@ app.use("/test", require("./routes/test"));
 app.use("/auth", require("./routes/auth"));
 app.use("/user", require("./routes/user"));
 app.use("/application", require("./routes/org/application"));
+app.use("/doctor", require("./routes/org/doctor"));
+app.use("/org", require("./routes/org/index"));
 app.use("/notification", require("./routes/system/notification"));
 
 app.listen(port, () => {
