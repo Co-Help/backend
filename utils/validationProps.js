@@ -88,6 +88,35 @@ const _joinOrg = (req, res, next) => {
   }
 };
 
+const createAppointment = [
+  number_prop("cost"),
+  string_prop("appointment_date"),
+  string_prop("booking_time"),
+  string_prop("info"),
+  number_prop("quantity"),
+];
+
+const _createAppointment = (req, res, next) => {
+  if (valid_data(req.body, createAppointment)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
+const removeAppointment = [
+  boolean_prop("empty_slots"),
+  string_prop("batch_code"),
+];
+
+const _removeAppointment = (req, res, next) => {
+  if (valid_data(req.body, removeAppointment)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
 module.exports = {
   _completeUserProfileProps,
   _middleware_setupUserProfile,
@@ -96,4 +125,6 @@ module.exports = {
   _approveApplication,
   _sendInvitation,
   _joinOrg,
+  _createAppointment,
+  _removeAppointment,
 };

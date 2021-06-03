@@ -6,7 +6,12 @@ const {
   allowUser,
   allowDoctor,
 } = require("../../middlewares/auth");
-const { _sendInvitation, _joinOrg } = require("../../utils/validationProps");
+const {
+  _sendInvitation,
+  _joinOrg,
+  _createAppointment,
+  _removeAppointment,
+} = require("../../utils/validationProps");
 const { sendMail } = require("../../utils/email");
 const { pushNotification } = require("../../utils/notification");
 const UserModel = require("../../db/models/user");
@@ -150,6 +155,125 @@ router.post(
       await doctor.save();
 
       return res.status(200).json({ message: "Successful operation" });
+    } catch (err) {
+      return HandleError(err, res);
+    }
+  }
+);
+
+router.get(
+  "/appointment",
+  check_for_access_token,
+  allowDoctor,
+  async (req, res) => {
+    try {
+      let appointments = [];
+
+      const populateContrains = [
+        {
+          path: "patient",
+          select: ["name", "avatar", "email", "dob", "contact"],
+        },
+      ];
+
+      appointments = await AppointmentModel.find({
+        doctor: req.user.id,
+      }).populate(populateContrains);
+
+      return res.status(200).json({
+        message: "Successful operation",
+        appointments: appointments,
+      });
+    } catch (err) {
+      return HandleError(err, res);
+    }
+  }
+);
+
+router.post(
+  "/appointment/set/done",
+  check_for_access_token,
+  allowDoctor,
+  async (req, res) => {
+    try {
+      const doctor = await UserModel.findById(req.user.id);
+      if (!doctor) throw new NOTFOUND("User");
+
+      const id_given = req.body?.id ? true : false;
+      const done = req.body.done !== undefined ? req.body.done : true;
+      if (!id_given) throw new NOTFOUND("Appointment id");
+
+      const ret = await AppointmentModel.findByIdAndUpdate(req.body.id, {
+        done,
+      });
+      if (!ret) throw new NOTFOUND("Appointment");
+
+      return res.status(200).json({ message: "Successful operation" });
+    } catch (err) {
+      return HandleError(err, res);
+    }
+  }
+);
+
+router.post(
+  "/appointment/create",
+  check_for_access_token,
+  allowDoctor,
+  _createAppointment,
+  async (req, res) => {
+    try {
+      const doctor = await UserModel.findById(req.user.id);
+      if (!doctor) throw new NOTFOUND("User");
+
+      const { cost, appointment_date, booking_time, info, quantity } = req.body;
+
+      if (quantity > 200) {
+        throw new INVALID("Number of quantity");
+      }
+      const batch_code = require("uuid").v4().slice(0, 5);
+      const org = doctor.doctor_info.org;
+
+      for (let i = 0; i < quantity; i++) {
+        const appointment = new AppointmentModel({
+          cost,
+          doctor,
+          org,
+          appointment_date,
+          booking_time,
+          info,
+          batch_code,
+        });
+        await appointment.save();
+      }
+
+      return res.status(200).json({ message: "Successful operation" });
+    } catch (err) {
+      return HandleError(err, res);
+    }
+  }
+);
+
+router.post(
+  "/appointment/remove",
+  check_for_access_token,
+  allowDoctor,
+  _removeAppointment,
+  async (req, res) => {
+    try {
+      const doctor = await UserModel.findById(req.user.id);
+      if (!doctor) throw new NOTFOUND("User");
+
+      const { empty_slots, batch_code } = req.body;
+
+      const filter = empty_slots
+        ? { batch_code }
+        : { batch_code, booked: true };
+
+      const ret = await AppointmentModel.deleteMany(filter);
+
+      return res
+        .status(200)
+        .json({ message: "Successful operation", removed: ret });
     } catch (err) {
       return HandleError(err, res);
     }

@@ -20,6 +20,9 @@ app.use("/doctor", require("./routes/org/doctor"));
 app.use("/org", require("./routes/org/index"));
 app.use("/notification", require("./routes/system/notification"));
 
+//Service Routes
+app.use("/services/appointment", require("./routes/services/appointment"));
+
 app.listen(port, () => {
   console.log(`Server Listening on port ${port}`);
 });
