@@ -1,4 +1,4 @@
-const { verifyToken } = require("../manager/jwt");
+const { verifyToken, verifyLoginToken } = require("../manager/jwt");
 const { REFRESH_TOKEN_SECRET } = process.env;
 
 const verify_roles = (res, next, userRole, roles = []) => {
@@ -15,6 +15,23 @@ const verify_roles = (res, next, userRole, roles = []) => {
     });
   }
 
+  next();
+};
+
+const check_for_login_token = (req, res, next) => {
+  const authHeader = req?.headers["authorization"] ?? null;
+
+  if (!authHeader) {
+    return res.status(400).json({ message: "Authorization Header not found" });
+  }
+  const token = authHeader.split(" ")[1];
+
+  const payload = verifyLoginToken(token);
+  if (!payload) {
+    return res.status(400).json({ message: "Invalid token" });
+  }
+
+  req.jaguar = payload;
   next();
 };
 
@@ -78,6 +95,7 @@ const allowAll = (req, res, next) => {
 };
 
 module.exports = {
+  check_for_login_token,
   check_for_access_token,
   check_for_refresh_token,
   allowAdmin,

@@ -8,6 +8,7 @@ const TokenManager = require("../manager/tokenManager");
 const {
   check_for_access_token,
   check_for_refresh_token,
+  check_for_login_token,
 } = require("../middlewares/auth");
 
 const client = new OAuth2Client(CLIENT_ID);
@@ -33,6 +34,65 @@ router.post("/login", async (req, res) => {
     });
 
     const { email_verified, email, name, picture } = ret.payload;
+
+    if (!email_verified) throw Error("Email is Not Varified");
+
+    const user = await UserModel.findOne({ email });
+
+    let tokenUser;
+
+    if (!user) {
+      tokenUser = await new UserModel({
+        name,
+        email,
+        avatar: picture,
+      }).save();
+    } else {
+      tokenUser = user;
+    }
+
+    resBLK.access_token = getAccessToken(tokenUser);
+    resBLK.refresh_token = getRefreshToken(tokenUser);
+
+    if (!tokenManager.isTokenAvailable(resBLK.refresh_token)) {
+      tokenManager.addToken(resBLK.refresh_token);
+    }
+
+    // tokenManager.log();
+
+    return res.status(200).json({
+      ...resBLK,
+      message: "Logged in",
+      user: {
+        id: tokenUser.id,
+        name: tokenUser.name,
+        email: tokenUser.email,
+        dob: tokenUser.dob,
+        role: tokenUser.role,
+        avatar: tokenUser.avatar,
+        is_profile_completed: tokenUser.is_profile_completed,
+        address: tokenUser?.address ?? null,
+        contact: tokenUser?.contact ?? null,
+        doctor_info:
+          tokenUser.role === "doctor" ? tokenUser?.doctor_info ?? null : null,
+      },
+    });
+  } catch (err) {
+    return res.status(400).json({
+      ...resBLK,
+      message: err?.message ?? err,
+    });
+  }
+});
+
+router.post("/login/mobile", check_for_login_token, async (req, res) => {
+  let resBLK = {
+    access_token: null,
+    refresh_token: null,
+    user: null,
+  };
+  try {
+    const { email_verified, email, name, picture } = req.jaguar;
 
     if (!email_verified) throw Error("Email is Not Varified");
 
