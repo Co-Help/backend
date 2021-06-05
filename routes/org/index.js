@@ -26,4 +26,6 @@ router.get(
   }
 );
 
+router.use("/emergency", require("./emergency"));
+
 module.exports = router;

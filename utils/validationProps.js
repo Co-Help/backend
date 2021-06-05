@@ -117,6 +117,21 @@ const _removeAppointment = (req, res, next) => {
   }
 };
 
+const createEmergency = [
+  number_prop("emergency_no"),
+  number_prop("cost"),
+  string_prop("info"),
+  boolean_prop("available"),
+];
+
+const _createEmergency = (req, res, next) => {
+  if (valid_data(req.body, createEmergency)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
 module.exports = {
   _completeUserProfileProps,
   _middleware_setupUserProfile,
@@ -127,4 +142,5 @@ module.exports = {
   _joinOrg,
   _createAppointment,
   _removeAppointment,
+  _createEmergency,
 };

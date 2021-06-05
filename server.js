@@ -22,6 +22,7 @@ app.use("/notification", require("./routes/system/notification"));
 
 //Service Routes
 app.use("/services/appointment", require("./routes/services/appointment"));
+app.use("/services/emergency", require("./routes/services/emergency"));
 
 app.listen(port, () => {
   console.log(`Server Listening on port ${port}`);
