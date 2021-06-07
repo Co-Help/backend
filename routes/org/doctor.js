@@ -230,7 +230,7 @@ router.post(
       if (quantity > 200) {
         throw new INVALID("Number of quantity");
       }
-      const batch_code = require("uuid").v4().slice(0, 5);
+      const batch_code = require("uuid").v4();
       const org = doctor.doctor_info.org;
 
       for (let i = 0; i < quantity; i++) {
