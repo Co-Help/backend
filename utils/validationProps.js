@@ -132,6 +132,46 @@ const _createEmergency = (req, res, next) => {
   }
 };
 
+const createBloodTest = [
+  number_prop("cost"),
+  string_prop("info"),
+  number_prop("quantity"),
+  string_prop("test_date"),
+];
+
+const _createBloodTest = (req, res, next) => {
+  if (valid_data(req.body, createBloodTest)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
+const addBloodTest = [number_prop("quantity"), string_prop("batch_code")];
+
+const _addBloodTest = (req, res, next) => {
+  if (valid_data(req.body, addBloodTest)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
+const editBloodTest = [
+  number_prop("cost"),
+  string_prop("info"),
+  string_prop("test_date"),
+  string_prop("batch_code"),
+];
+
+const _editBloodTest = (req, res, next) => {
+  if (valid_data(req.body, editBloodTest)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
 module.exports = {
   _completeUserProfileProps,
   _middleware_setupUserProfile,
@@ -143,4 +183,7 @@ module.exports = {
   _createAppointment,
   _removeAppointment,
   _createEmergency,
+  _createBloodTest,
+  _addBloodTest,
+  _editBloodTest,
 };
