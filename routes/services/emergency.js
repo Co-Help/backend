@@ -4,9 +4,9 @@ const EmergencyModel = require("../../db/models/services/emergencyProvide");
 
 router.get("/", check_for_access_token, allowAll, async (req, res) => {
   try {
-    const findByCity = req.body?.city ? true : false;
-    const findByDistrict = req.body?.district ? true : false;
-    const findByOrg = req.body?.org ? true : false;
+    const findByCity = req.query?.city ? true : false;
+    const findByDistrict = req.query?.district ? true : false;
+    const findByOrg = req.query?.org ? true : false;
     let emergencies = [];
 
     const orgContrains = {
@@ -20,7 +20,7 @@ router.get("/", check_for_access_token, allowAll, async (req, res) => {
       );
 
       emergencies = emergencies.filter(
-        (item) => item.org.address.city === req.body.city
+        (item) => item.org.address.city === req.query.city
       );
     }
 
@@ -30,13 +30,13 @@ router.get("/", check_for_access_token, allowAll, async (req, res) => {
       );
 
       emergencies = emergencies.filter(
-        (item) => item.org.address.district === req.body.district
+        (item) => item.org.address.district === req.query.district
       );
     }
 
     if (findByOrg) {
       emergencies = await EmergencyModel.find({
-        org: req.body.org,
+        org: req.query.org,
         available: true,
       }).populate(orgContrains);
     }
