@@ -4,6 +4,7 @@ const { NOTFOUND, HandleError, ERROR } = require("../../utils/error");
 const {
   _createBloodTest,
   _addBloodTest,
+  _editBloodTest,
 } = require("../../utils/validationProps");
 const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
@@ -160,31 +161,37 @@ router.post(
   }
 );
 
-router.post("/edit", check_for_access_token, allowOrg, async (req, res) => {
-  try {
-    const user = await UserModel.exists({ _id: req.user.id });
-    if (!user) throw new NOTFOUND("Org User");
+router.post(
+  "/edit",
+  check_for_access_token,
+  allowOrg,
+  _editBloodTest,
+  async (req, res) => {
+    try {
+      const user = await UserModel.exists({ _id: req.user.id });
+      if (!user) throw new NOTFOUND("Org User");
 
-    const org = await OrgModel.findOne({ user: req.user.id });
-    if (!org) throw new NOTFOUND("Org");
+      const org = await OrgModel.findOne({ user: req.user.id });
+      if (!org) throw new NOTFOUND("Org");
 
-    const { cost, batch_code, info, test_date } = req.body;
+      const { cost, batch_code, info, test_date } = req.body;
 
-    await BloodTestModel.updateMany(
-      { batch_code, org, done: false },
-      { info, test_date }
-    );
+      await BloodTestModel.updateMany(
+        { batch_code, org, done: false },
+        { info, test_date }
+      );
 
-    await BloodTestModel.updateMany(
-      { batch_code, org, booked: false },
-      { cost }
-    );
+      await BloodTestModel.updateMany(
+        { batch_code, org, booked: false },
+        { cost }
+      );
 
-    return res.status(200).json({ message: "Successful operation" });
-  } catch (err) {
-    return HandleError(err, res);
+      return res.status(200).json({ message: "Successful operation" });
+    } catch (err) {
+      return HandleError(err, res);
+    }
   }
-});
+);
 
 router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
   try {
