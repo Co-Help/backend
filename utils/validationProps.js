@@ -172,6 +172,45 @@ const _editBloodTest = (req, res, next) => {
   }
 };
 
+const createVaccination = [
+  number_prop("cost"),
+  string_prop("info"),
+  number_prop("min_age"),
+  number_prop("max_age"),
+  string_prop("vaccine_name"),
+  string_prop("vaccine_doze"),
+  string_prop("vaccine_date"),
+  number_prop("quantity"),
+];
+
+const _createVaccination = (req, res, next) => {
+  if (valid_data(req.body, createVaccination)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
+const _addVaccination = _addBloodTest;
+
+const editVaccination = [
+  number_prop("cost"),
+  number_prop("min_age"),
+  number_prop("max_age"),
+  string_prop("info"),
+  string_prop("vaccine_date"),
+  string_prop("vaccine_name"),
+  string_prop("batch_code"),
+];
+
+const _editVaccination = (req, res, next) => {
+  if (valid_data(req.body, editVaccination)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
 module.exports = {
   _completeUserProfileProps,
   _middleware_setupUserProfile,
@@ -186,4 +225,7 @@ module.exports = {
   _createBloodTest,
   _addBloodTest,
   _editBloodTest,
+  _createVaccination,
+  _addVaccination,
+  _editVaccination,
 };

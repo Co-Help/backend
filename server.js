@@ -24,6 +24,7 @@ app.use("/notification", require("./routes/system/notification"));
 app.use("/services/appointment", require("./routes/services/appointment"));
 app.use("/services/emergency", require("./routes/services/emergency"));
 app.use("/services/blood_test", require("./routes/services/bloodTest"));
+app.use("/services/vaccination", require("./routes/services/vaccination"));
 
 app.listen(port, () => {
   console.log(`Server Listening on port ${port}`);

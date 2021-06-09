@@ -10,30 +10,13 @@ const vaccineSchema = Schema({
   org: { type: SchemaTypes.ObjectId, ref: ORG_COLLECTION, required: true },
   done: { type: SchemaTypes.Boolean, default: false },
   booked: { type: SchemaTypes.Boolean, default: false },
-  buyer: { type: SchemaTypes.ObjectId, ref: USER_COLLECTION },
+  patient: { type: SchemaTypes.ObjectId, ref: USER_COLLECTION },
   info: { type: SchemaTypes.String, required: false },
   batch_code: { type: SchemaTypes.String, required: true },
-  schedules: {
-    first_doze: {
-      name: {
-        type: SchemaTypes.String,
-        required: true,
-      },
-      date: {
-        type: SchemaTypes.Date,
-        required: true,
-      },
-    },
-    second_doze: {
-      name: {
-        type: SchemaTypes.String,
-        required: true,
-      },
-      date: {
-        type: SchemaTypes.Date,
-      },
-    },
-  },
+  booking_date: { type: SchemaTypes.Date, required: false },
+  vaccine_name: { type: SchemaTypes.String, required: true },
+  vaccine_doze: { type: SchemaTypes.String, default: "1ST", required: true },
+  vaccine_date: { type: SchemaTypes.Date },
 });
 
 module.exports = model(VACCINE_COLLECTION, vaccineSchema);
