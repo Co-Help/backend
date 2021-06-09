@@ -28,6 +28,7 @@ router.get(
 
 router.use("/emergency", require("./emergency"));
 router.use("/blood_test", require("./bloodTest"));
+router.use("/blood_provide", require("./bloodProvide"));
 router.use("/vaccination", require("./vaccination"));
 
 module.exports = router;

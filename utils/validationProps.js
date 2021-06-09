@@ -211,6 +211,20 @@ const _editVaccination = (req, res, next) => {
   }
 };
 
+const createBloodProvide = [
+  number_prop("cost"),
+  string_prop("group"),
+  string_prop("info"),
+];
+
+const _createBloodProvide = (req, res, next) => {
+  if (valid_data(req.body, createBloodProvide)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
 module.exports = {
   _completeUserProfileProps,
   _middleware_setupUserProfile,
@@ -228,4 +242,5 @@ module.exports = {
   _createVaccination,
   _addVaccination,
   _editVaccination,
+  _createBloodProvide,
 };
