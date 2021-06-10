@@ -140,10 +140,6 @@ router.post(
           { invalid_batch_code: true }
         );
 
-      if (oneObj.quantity + quantity > 200) {
-        throw new INVALID("Number of quantity");
-      }
-
       for (let i = 0; i < quantity; i++) {
         const blood_test = new BloodTestModel({
           cost: oneObj.cost,
