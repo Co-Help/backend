@@ -225,6 +225,36 @@ const _createBloodProvide = (req, res, next) => {
   }
 };
 
+const createOxygenProvide = [
+  number_prop("cost"),
+  number_prop("capacity"),
+  string_prop("info"),
+  number_prop("quantity"),
+];
+
+const _createOxygenProvide = (req, res, next) => {
+  if (valid_data(req.body, createOxygenProvide)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
+const editOxygenProvide = [
+  number_prop("cost"),
+  number_prop("capacity"),
+  string_prop("info"),
+  string_prop("batch_code"),
+];
+
+const _editOxygenProvide = (req, res, next) => {
+  if (valid_data(req.body, editOxygenProvide)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
 module.exports = {
   _completeUserProfileProps,
   _middleware_setupUserProfile,
@@ -243,4 +273,6 @@ module.exports = {
   _addVaccination,
   _editVaccination,
   _createBloodProvide,
+  _createOxygenProvide,
+  _editOxygenProvide,
 };

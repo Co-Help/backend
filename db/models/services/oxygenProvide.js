@@ -8,7 +8,7 @@ const oxygenSchema = Schema({
   done: { type: SchemaTypes.Boolean, default: false },
   booked: { type: SchemaTypes.Boolean, default: false },
   buyer: { type: SchemaTypes.ObjectId, ref: USER_COLLECTION },
-  booking_time: { type: SchemaTypes.Date, required: false },
+  booking_date: { type: SchemaTypes.Date, required: false },
   info: { type: SchemaTypes.String, required: false },
   batch_code: { type: SchemaTypes.String, required: true },
 });
