@@ -68,7 +68,7 @@ const _approveApplication = (req, res, next) => {
   }
 };
 
-const sendInvitation = [string_prop("id")];
+const sendInvitation = [string_prop("email")];
 
 const _sendInvitation = (req, res, next) => {
   if (valid_data(req.body, sendInvitation)) {

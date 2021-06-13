@@ -20,7 +20,7 @@ router.post(
   _sendInvitation,
   async (req, res) => {
     try {
-      const user = await UserModel.findById(req.body.id);
+      const user = await UserModel.findOne({ email: req.body.email });
       if (!user) throw new NOTFOUND("User");
 
       if (user.role !== "user") {
