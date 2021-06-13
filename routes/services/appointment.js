@@ -5,10 +5,10 @@ const AppointmentModel = require("../../db/models/services/appointment");
 
 router.get("/", check_for_access_token, allowUser, async (req, res) => {
   try {
-    const findByDoctor = req.body?.doctor ? true : false;
-    const findByCity = req.body?.city ? true : false;
-    const findByDistrict = req.body?.district ? true : false;
-    const findByOrg = req.body?.org ? true : false;
+    const findByDoctor = req.query?.doctor ? true : false;
+    const findByCity = req.query?.city ? true : false;
+    const findByDistrict = req.query?.district ? true : false;
+    const findByOrg = req.query?.org ? true : false;
     let appointments = [];
     let filteredAppointments = [];
 
@@ -19,7 +19,7 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
 
     if (findByDoctor) {
       appointments = await AppointmentModel.find({
-        doctor: req.body.doctor,
+        doctor: req.query.doctor,
         booked: false,
       }).populate(orgContrains);
     }
@@ -31,20 +31,20 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
 
       if (findByCity) {
         appointments = appointments.filter(
-          (item) => item.org.address.city === req.body.city
+          (item) => item.org.address.city === req.query.city
         );
       }
 
       if (findByDistrict) {
         appointments = appointments.filter(
-          (item) => item.org.address.district === req.body.district
+          (item) => item.org.address.district === req.query.district
         );
       }
     }
 
     if (findByOrg) {
       appointments = await AppointmentModel.find({
-        org: req.body.org,
+        org: req.query.org,
         booked: false,
       }).populate(orgContrains);
     }
@@ -130,11 +130,11 @@ router.post("/", check_for_access_token, allowUser, async (req, res) => {
 
 router.post("/cancel", check_for_access_token, allowUser, async (req, res) => {
   try {
-    const is_batch_code_exists = req.body?.batch_code ? true : false;
+    const id_given = req.body?.id ? true : false;
 
-    if (is_batch_code_exists) {
+    if (id_given) {
       const appointment = await AppointmentModel.findOne({
-        batch_code: req.body.batch_code,
+        _id: req.body?.id,
         patient: req.user.id,
       });
 
@@ -152,7 +152,7 @@ router.post("/cancel", check_for_access_token, allowUser, async (req, res) => {
 
       await AppointmentModel.findOneAndUpdate(
         {
-          batch_code: req.body.batch_code,
+          _id: req.body?.id,
           patient: req.user.id,
         },
         {
