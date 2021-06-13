@@ -104,6 +104,21 @@ const _createAppointment = (req, res, next) => {
   }
 };
 
+const editAppointment = [
+  number_prop("cost"),
+  string_prop("appointment_date"),
+  string_prop("info"),
+  string_prop("batch_code"),
+];
+
+const _editAppointment = (req, res, next) => {
+  if (valid_data(req.body, editAppointment)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
 const removeAppointment = [
   boolean_prop("empty_slots"),
   string_prop("batch_code"),
@@ -264,6 +279,7 @@ module.exports = {
   _sendInvitation,
   _joinOrg,
   _createAppointment,
+  _editAppointment,
   _removeAppointment,
   _createEmergency,
   _createBloodTest,

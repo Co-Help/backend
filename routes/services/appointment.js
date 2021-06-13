@@ -99,17 +99,6 @@ router.post("/", check_for_access_token, allowUser, async (req, res) => {
     const is_batch_code_exists = req.body?.batch_code ? true : false;
 
     if (is_batch_code_exists) {
-      const is_prev_booked = await AppointmentModel.exists({
-        batch_code: req.body.batch_code,
-        patient: req.user.id,
-      });
-
-      if (is_prev_booked) {
-        throw new ERROR("You already booked an appointment", 400, {
-          is_booked: true,
-        });
-      }
-
       const ret = await AppointmentModel.findOneAndUpdate(
         {
           batch_code: req.body.batch_code,
