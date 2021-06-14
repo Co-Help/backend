@@ -124,6 +124,14 @@ router.post(
       const org = await OrgModel.findOne({ doctors: { $in: [req.user.id] } });
       if (!org) throw new NOTFOUND("Org");
 
+      if (!org.services.doctor_appointment) {
+        throw new ERROR(
+          "Your org doesn't have permission to use Doctor appointment Service",
+          400,
+          { permission_denied: true }
+        );
+      }
+
       const { cost, appointment_date, booking_time, info, quantity } = req.body;
 
       const batch_code = require("uuid").v4();

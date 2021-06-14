@@ -96,6 +96,14 @@ router.post(
       const org = await OrgModel.findOne({ user: req.user.id });
       if (!org) throw new NOTFOUND("Org");
 
+      if (!org.services.blood_test) {
+        throw new ERROR(
+          "Your org doesn't have permission to use Blood Test Service",
+          400,
+          { permission_denied: true }
+        );
+      }
+
       const { cost, info, quantity, test_date } = req.body;
 
       const batch_code = require("uuid").v4();

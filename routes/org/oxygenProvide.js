@@ -92,6 +92,14 @@ router.post(
       const org = await OrgModel.findOne({ user: req.user.id });
       if (!org) throw new NOTFOUND("Org");
 
+      if (!org.services.oxygen_provide) {
+        throw new ERROR(
+          "Your org doesn't have permission to use Oxygen Service",
+          400,
+          { permission_denied: true }
+        );
+      }
+
       const { cost, info, quantity, capacity } = req.body;
 
       const batch_code = require("uuid").v4();

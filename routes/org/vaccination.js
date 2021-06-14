@@ -96,6 +96,14 @@ router.post(
       const org = await OrgModel.findOne({ user: req.user.id });
       if (!org) throw new NOTFOUND("Org");
 
+      if (!org.services.vaccination) {
+        throw new ERROR(
+          "Your org doesn't have permission to use Vaccination Service",
+          400,
+          { permission_denied: true }
+        );
+      }
+
       const {
         cost,
         info,

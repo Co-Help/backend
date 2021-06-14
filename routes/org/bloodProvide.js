@@ -35,6 +35,14 @@ router.post(
       const org = await OrgModel.findOne({ user: req.user.id });
       if (!org) throw new NOTFOUND("Org");
 
+      if (!org.services.blood_provide) {
+        throw new ERROR(
+          "Your org doesn't have permission to use Blood Provide Service",
+          400,
+          { permission_denied: true }
+        );
+      }
+
       const { group, cost, info } = req.body;
 
       if (await ServiceModel.exists({ group })) {

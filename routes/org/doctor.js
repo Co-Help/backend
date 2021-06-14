@@ -30,6 +30,14 @@ router.post(
       const org = await OrgModel.findOne({ user: req.user.id });
       if (!org) throw new INVALID("Org");
 
+      if (!org.services.doctor_appointment) {
+        throw new ERROR(
+          "Your org doesn't have permission to use Doctor appointment Service",
+          400,
+          { permission_denied: true }
+        );
+      }
+
       await sendMail(
         user.email,
         `Invitation to the ${org.name}`,

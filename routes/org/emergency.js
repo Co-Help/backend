@@ -35,6 +35,14 @@ router.post(
       const org = await OrgModel.findOne({ user: req.user.id });
       if (!org) throw new NOTFOUND("Org");
 
+      if (!org.services.emergency_provide) {
+        throw new ERROR(
+          "Your org doesn't have permission to use Emergency Service",
+          400,
+          { permission_denied: true }
+        );
+      }
+
       const { emergency_no, cost, info, available } = req.body;
 
       const emergency = new EmergencyModel({
