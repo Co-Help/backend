@@ -205,6 +205,7 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
     } else {
       ret = await ServiceModel.deleteMany({
         booked: false,
+        org,
         ...batch_constrains,
       });
     }

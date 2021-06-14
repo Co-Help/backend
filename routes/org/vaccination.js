@@ -247,7 +247,7 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
         org,
       });
     } else {
-      ret = await VaccinationModel.deleteMany({ booked: false });
+      ret = await VaccinationModel.deleteMany({ booked: false, org });
     }
 
     if (!ret) throw new ERROR("Error while removing", 500, { err: ret });

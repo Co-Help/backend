@@ -215,7 +215,7 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
         org,
       });
     } else {
-      ret = await BloodTestModel.deleteMany({ booked: false });
+      ret = await BloodTestModel.deleteMany({ booked: false, org });
     }
 
     if (!ret) throw new ERROR("Error while removing", 500, { err: ret });
