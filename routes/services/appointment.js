@@ -21,7 +21,13 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
       appointments = await AppointmentModel.find({
         doctor: req.query.doctor,
         booked: false,
-      }).populate(orgContrains);
+      })
+        .populate(orgContrains)
+        .populate({
+          path: "doctor",
+          select: ["name", "address", "doctor_info.active"],
+          match: { "doctor_info.active": { $eq: true } },
+        });
     }
 
     if (findByCity || findByDistrict) {
@@ -48,6 +54,8 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
         booked: false,
       }).populate(orgContrains);
     }
+
+    appointments = appointments.filter((item) => item.doctor !== null);
 
     appointments.forEach((item) => {
       const is_exists = filteredAppointments.find(
