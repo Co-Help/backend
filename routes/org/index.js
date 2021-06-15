@@ -1,5 +1,9 @@
 const router = require("express").Router();
-const { check_for_access_token, allowOrg } = require("../../middlewares/auth");
+const {
+  check_for_access_token,
+  allowOrg,
+  allowUser,
+} = require("../../middlewares/auth");
 const { NOTFOUND, HandleError } = require("../../utils/error");
 const OrgModel = require("../../db/models/org");
 const { v4 } = require("uuid");
@@ -25,6 +29,55 @@ router.get(
     }
   }
 );
+
+router.get("/", check_for_access_token, allowUser, async (req, res) => {
+  try {
+    const findByCity = req.query?.city ? true : false;
+    const findByDistrict = req.query?.district ? true : false;
+    const keywordsGiven = req.query?.search ? true : false;
+    let orgs = [];
+
+    const searchConstrains = keywordsGiven
+      ? {
+          $or: [
+            { name: { $regex: req.query.search, $options: "i" } },
+            { info: { $regex: req.query.search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    if (findByCity || findByDistrict) {
+      if (findByCity) {
+        orgs = await OrgModel.find({
+          address: { city: req.query.city },
+          ...searchConstrains,
+        })
+          .select(["-pass_key"])
+          .populate("doctors");
+      }
+
+      if (findByDistrict) {
+        orgs = await OrgModel.find({
+          address: { city: req.query.district },
+          ...searchConstrains,
+        })
+          .select(["-pass_key"])
+          .populate("doctors");
+      }
+    } else {
+      orgs = await OrgModel.find({ ...searchConstrains })
+        .select(["-pass_key"])
+        .populate("doctors");
+    }
+
+    return res.status(200).json({
+      message: "Successful operation",
+      appointments: orgs,
+    });
+  } catch (err) {
+    return HandleError(err, res);
+  }
+});
 
 router.use("/emergency", require("./emergency"));
 router.use("/blood_test", require("./bloodTest"));
