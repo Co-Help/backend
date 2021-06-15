@@ -12,9 +12,15 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
     let appointments = [];
     let filteredAppointments = [];
 
-    const orgContrains = {
+    const orgConstraints = {
       path: "org",
       select: ["name", "logo_url", "helpline_no", "address"],
+    };
+
+    const doctorConstraints = {
+      path: "doctor",
+      select: ["name", "address", "doctor_info.active"],
+      match: { "doctor_info.active": { $eq: true } },
     };
 
     if (findByDoctor) {
@@ -22,29 +28,25 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
         doctor: req.query.doctor,
         booked: false,
       })
-        .populate(orgContrains)
-        .populate({
-          path: "doctor",
-          select: ["name", "address", "doctor_info.active"],
-          match: { "doctor_info.active": { $eq: true } },
-        });
+        .populate(orgConstraints)
+        .populate(doctorConstraints);
     }
 
     if (findByCity || findByDistrict) {
-      appointments = await AppointmentModel.find({ booked: false }).populate(
-        orgContrains
-      );
+      appointments = await AppointmentModel.find({ booked: false })
+        .populate(orgConstraints)
+        .populate(doctorConstraints);
 
       if (findByCity) {
-        appointments = appointments.filter(
-          (item) => item.org.address.city === req.query.city
-        );
+        appointments = appointments
+          .filter((item) => item.org.address.city === req.query.city)
+          .populate(doctorConstraints);
       }
 
       if (findByDistrict) {
-        appointments = appointments.filter(
-          (item) => item.org.address.district === req.query.district
-        );
+        appointments = appointments
+          .filter((item) => item.org.address.district === req.query.district)
+          .populate(doctorConstraints);
       }
     }
 
@@ -52,7 +54,9 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
       appointments = await AppointmentModel.find({
         org: req.query.org,
         booked: false,
-      }).populate(orgContrains);
+      })
+        .populate(orgConstraints)
+        .populate(doctorConstraints);
     }
 
     appointments = appointments.filter((item) => item.doctor !== null);
@@ -78,7 +82,7 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
 
 router.get("/booked", check_for_access_token, allowUser, async (req, res) => {
   try {
-    const orgContrains = [
+    const orgConstraints = [
       {
         path: "org",
         select: ["name", "logo_url", "helpline_no", "address"],
@@ -91,7 +95,7 @@ router.get("/booked", check_for_access_token, allowUser, async (req, res) => {
 
     const appointments = await AppointmentModel.find({
       patient: req.user.id,
-    }).populate(orgContrains);
+    }).populate(orgConstraints);
 
     return res.status(200).json({
       message: "Successful operation",
