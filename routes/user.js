@@ -3,6 +3,7 @@ const { HandleError, INVALID, NOTFOUND } = require("../utils/error");
 const { _middleware_setupUserProfile } = require("../utils/validationProps");
 
 const UserModel = require("../db/models/user");
+const OrgModel = require("../db/models/org");
 
 const { check_for_access_token } = require("../middlewares/auth");
 
@@ -45,12 +46,18 @@ router.post(
 
 router.get("/profile", check_for_access_token, async (req, res) => {
   try {
+    let org = {};
     const user = await UserModel.findById(req.user.id);
     if (!user) throw new NOTFOUND("user");
+
+    if (user.role === "org") {
+      org = await OrgModel.findOne({ user }).populate("doctors");
+    }
 
     return res.status(200).json({
       message: "Successful Operation",
       profile: user,
+      org,
     });
   } catch (err) {
     return HandleError(err, res);
