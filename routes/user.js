@@ -43,4 +43,18 @@ router.post(
   }
 );
 
+router.get("/profile", check_for_access_token, async (req, res) => {
+  try {
+    const user = await UserModel.findById(req.user.id);
+    if (!user) throw new NOTFOUND("user");
+
+    return res.status(200).json({
+      message: "Successful Operation",
+      profile: user,
+    });
+  } catch (err) {
+    return HandleError(err, res);
+  }
+});
+
 module.exports = router;
