@@ -229,6 +229,90 @@ router.get("/search", check_for_access_token, async (req, res) => {
   }
 });
 
+router.get("/booked", check_for_access_token, async (req, res) => {
+  try {
+    const orgContrains = {
+      path: "org",
+      select: ["name", "logo_url", "helpline_no", "address"],
+    };
+
+    const appointments = await AppointmentModel.find({
+      patient: req.user.id,
+    }).populate(orgContrains);
+
+    const vaccinations = await VaccinationModel.find({
+      patient: req.user.id,
+    }).populate(orgContrains);
+
+    const blood_tests = await BloodTestModel.find({
+      patient: req.user.id,
+    }).populate(orgContrains);
+
+    const oxygen_provides = await OxygenModel.find({
+      buyer: req.user.id,
+    }).populate(orgContrains);
+
+    let filtered_oxygen_provides = [];
+
+    oxygen_provides.forEach((item) => {
+      const {
+        cost,
+        capacity,
+        org,
+        done,
+        booked,
+        buyer,
+        booking_date,
+        info,
+        batch_code,
+      } = item;
+      const exists = filtered_oxygen_provides.find((fItem) => {
+        return (
+          item.booking_date.toISOString() ===
+            fItem.booking_date.toISOString() &&
+          item.buyer.toString() === fItem.buyer.toString()
+        );
+      });
+      if (exists) {
+        filtered_oxygen_provides = filtered_oxygen_provides.map((fItem) => {
+          fItem.qty =
+            item.booking_date.toISOString() ===
+              fItem.booking_date.toISOString() &&
+            item.buyer.toString() === fItem.buyer.toString()
+              ? fItem.qty + 1
+              : fItem.qty;
+          return fItem;
+        });
+      } else {
+        filtered_oxygen_provides.push({
+          cost,
+          capacity,
+          org,
+          done,
+          booked,
+          buyer,
+          booking_date,
+          info,
+          batch_code,
+          qty: 1,
+        });
+      }
+    });
+
+    return res.status(200).json({
+      message: "Successful operation",
+      results: {
+        vaccinations,
+        blood_tests,
+        oxygen_provides: filtered_oxygen_provides,
+        appointments,
+      },
+    });
+  } catch (err) {
+    return HandleError(err, res);
+  }
+});
+
 router.use("/appointment", require("./appointment"));
 router.use("/emergency", require("./emergency"));
 router.use("/blood_test", require("./bloodTest"));
