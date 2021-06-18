@@ -83,6 +83,7 @@ router.use("/emergency", require("./emergency"));
 router.use("/blood_test", require("./bloodTest"));
 router.use("/blood_provide", require("./bloodProvide"));
 router.use("/oxygen_provide", require("./oxygenProvide"));
+router.use("/bed_provide", require("./bedProvide"));
 router.use("/vaccination", require("./vaccination"));
 router.use("/appointment", require("./appointment"));
 

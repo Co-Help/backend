@@ -270,6 +270,22 @@ const _editOxygenProvide = (req, res, next) => {
   }
 };
 
+const createBedProvide = [
+  number_prop("cost"),
+  string_prop("info"),
+  number_prop("total_beds"),
+  number_prop("available_beds"),
+  boolean_prop("available"),
+];
+
+const _createBedProvide = (req, res, next) => {
+  if (valid_data(req.body, createBedProvide)) {
+    next();
+  } else {
+    res.status(400).json({ msg: "Invalid Data" });
+  }
+};
+
 module.exports = {
   _completeUserProfileProps,
   _middleware_setupUserProfile,
@@ -291,4 +307,5 @@ module.exports = {
   _createBloodProvide,
   _createOxygenProvide,
   _editOxygenProvide,
+  _createBedProvide,
 };
