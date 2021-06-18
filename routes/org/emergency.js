@@ -103,7 +103,7 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
     const { id } = req.body;
     if (!id) throw new NOTFOUND("Emergency id");
 
-    await EmergencyModel.findByIdAndDelete(id);
+    await EmergencyModel.findOneAndDelete({ _id: id, org });
 
     return res.status(200).json({
       message: "Successful operation",

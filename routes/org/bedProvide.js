@@ -107,6 +107,7 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
     const id_given = req.body?.id ? true : false;
     if (!id_given) throw new NOTFOUND("id");
 
+    const { id } = req.body;
     const ret = await ServiceModel.findOneAndDelete({ _id: id, org });
     if (!ret) throw new ERROR("Error while removing", 500, { err: ret });
 
