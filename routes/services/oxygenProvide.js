@@ -6,6 +6,7 @@ const { HandleError, NOTFOUND, ERROR } = require("../../utils/error");
 const UserModel = require("../../db/models/user");
 // const OrgModel = require("../../db/models/org");
 const ServiceModel = require("../../db/models/services/oxygenProvide");
+const { getBookingConstrains } = require("../../utils");
 
 router.get("/", check_for_access_token, allowAll, async (req, res) => {
   try {
@@ -74,6 +75,8 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
     const is_batch_code_exists = req.body?.batch_code ? true : false;
     if (!is_batch_code_exists) throw new NOTFOUND("batch_code");
 
+    const bookingConstrains = getBookingConstrains(req.body);
+
     const quantity =
       req.body?.quantity && typeof req.body?.quantity === "number"
         ? req.body.quantity
@@ -94,6 +97,7 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
       buyer: user._id,
       booking_date: Date.now(),
       booked: true,
+      ...bookingConstrains,
     };
 
     for (let i = 0; i < quantity; i++) {
@@ -136,6 +140,7 @@ router.get("/booked", check_for_access_token, allowAll, async (req, res) => {
         booking_date,
         info,
         batch_code,
+        patient_details,
       } = item;
       const exists = filtered_services.find((fItem) => {
         return (
@@ -165,6 +170,7 @@ router.get("/booked", check_for_access_token, allowAll, async (req, res) => {
           booking_date,
           info,
           batch_code,
+          patient_details,
           qty: 1,
         });
       }
@@ -193,6 +199,7 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
         buyer: null,
         booked: false,
         booking_date: null,
+        patient_details: null,
       }
     );
 

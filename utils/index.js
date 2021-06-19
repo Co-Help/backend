@@ -1,7 +1,8 @@
 const { NOTFOUND } = require("./error");
 
 const getBookingConstrains = (body) => {
-  const self_booking = body?.self_booking ? body.self_booking : false;
+  const self_booking =
+    body.self_booking != undefined ? body.self_booking : true;
 
   if (!self_booking) {
     if (!body.name || typeof body.name != "string") {

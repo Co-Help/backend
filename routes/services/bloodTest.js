@@ -6,6 +6,7 @@ const { HandleError, NOTFOUND, ERROR } = require("../../utils/error");
 const UserModel = require("../../db/models/user");
 // const OrgModel = require("../../db/models/org");
 const BloodTestModel = require("../../db/models/services/bloodTest");
+const { getBookingConstrains } = require("../../utils");
 
 router.get("/", check_for_access_token, allowAll, async (req, res) => {
   try {
@@ -74,12 +75,15 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
     const is_batch_code_exists = req.body?.batch_code ? true : false;
     if (!is_batch_code_exists) throw new NOTFOUND("batch_code");
 
+    const bookingConstrains = getBookingConstrains(req.body);
+
     const ret = await BloodTestModel.findOneAndUpdate(
       { batch_code: req.body.batch_code, booked: false },
       {
         patient: user,
         booking_date: Date.now(),
         booked: true,
+        ...bookingConstrains,
       }
     );
     if (!ret) throw new ERROR("Error Ocurred", 500, { err: ret });
@@ -127,6 +131,7 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
         patient: null,
         booked: false,
         booking_date: null,
+        patient_details: null,
       }
     );
 

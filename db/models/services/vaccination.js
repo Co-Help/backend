@@ -17,6 +17,12 @@ const vaccineSchema = Schema({
   vaccine_name: { type: SchemaTypes.String, required: true },
   vaccine_doze: { type: SchemaTypes.String, default: "1ST", required: true },
   vaccine_date: { type: SchemaTypes.Date },
+  self_booking: { type: SchemaTypes.Boolean, default: true, required: true },
+  patient_details: {
+    name: { type: SchemaTypes.String },
+    age: { type: SchemaTypes.Number },
+    mobile_no: { type: SchemaTypes.Number },
+  },
 });
 
 module.exports = model(VACCINE_COLLECTION, vaccineSchema);
