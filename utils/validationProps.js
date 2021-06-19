@@ -91,7 +91,6 @@ const _joinOrg = (req, res, next) => {
 const createAppointment = [
   number_prop("cost"),
   string_prop("appointment_date"),
-  string_prop("booking_time"),
   string_prop("info"),
   number_prop("quantity"),
 ];

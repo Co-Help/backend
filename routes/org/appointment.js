@@ -132,7 +132,7 @@ router.post(
         );
       }
 
-      const { cost, appointment_date, booking_time, info, quantity } = req.body;
+      const { cost, appointment_date, info, quantity } = req.body;
 
       const batch_code = require("uuid").v4();
 
@@ -142,7 +142,6 @@ router.post(
           doctor,
           org,
           appointment_date,
-          booking_time,
           info,
           batch_code,
         });
