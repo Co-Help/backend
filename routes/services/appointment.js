@@ -2,6 +2,7 @@ const router = require("express").Router();
 const { check_for_access_token, allowUser } = require("../../middlewares/auth");
 const { HandleError, NOTFOUND, ERROR } = require("../../utils/error");
 const AppointmentModel = require("../../db/models/services/appointment");
+const { getBookingConstrains } = require("../../utils");
 
 router.get("/", check_for_access_token, allowUser, async (req, res) => {
   try {
@@ -110,6 +111,8 @@ router.post("/", check_for_access_token, allowUser, async (req, res) => {
   try {
     const is_batch_code_exists = req.body?.batch_code ? true : false;
 
+    const bookingConstrains = getBookingConstrains(req.body);
+
     if (is_batch_code_exists) {
       const ret = await AppointmentModel.findOneAndUpdate(
         {
@@ -120,6 +123,7 @@ router.post("/", check_for_access_token, allowUser, async (req, res) => {
           booked: true,
           patient: req.user.id,
           booking_time: Date.now(),
+          ...bookingConstrains,
         }
       );
 
@@ -168,13 +172,14 @@ router.post("/cancel", check_for_access_token, allowUser, async (req, res) => {
           patient: req.user.id,
         },
         {
-          booked: true,
+          booked: false,
           patient: null,
           booking_time: null,
+          patient_details: null,
         }
       );
     } else {
-      throw new NOTFOUND("batch_code");
+      throw new NOTFOUND("id");
     }
 
     return res.status(200).json({

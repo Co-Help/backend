@@ -12,6 +12,12 @@ const appointmentSchema = Schema({
   booking_time: { type: SchemaTypes.Date, required: false },
   info: { type: SchemaTypes.String, required: false },
   batch_code: { type: SchemaTypes.String, required: true },
+  self_booking: { type: SchemaTypes.Boolean, default: true, required: true },
+  patient_details: {
+    name: { type: SchemaTypes.String },
+    age: { type: SchemaTypes.Number },
+    mobile_no: { type: SchemaTypes.Number },
+  },
 });
 
 module.exports = model(APPOINTMENT_COLLECTION, appointmentSchema);
