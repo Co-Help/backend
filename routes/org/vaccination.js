@@ -9,6 +9,7 @@ const {
 const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
 const VaccinationModel = require("../../db/models/services/vaccination");
+const NotificationModel = require("../../db/models/notification");
 
 router.get("/", check_for_access_token, allowOrg, async (req, res) => {
   try {
@@ -237,25 +238,139 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
     const org = await OrgModel.findOne({ user: req.user.id });
     if (!org) throw new NOTFOUND("Org");
 
+    const batch_code_given = req.body?.batch_code ? true : false;
     const id_given = req.body?.id ? true : false;
     const ids_given = req.body?.ids ? true : false;
 
     let ret;
+
+    const batchConstrains = batch_code_given
+      ? { batch_code: req.body.batch_code }
+      : {};
 
     if (id_given) {
       ret = await VaccinationModel.findOneAndDelete({
         _id: req.body.id,
         booked: false,
         org,
+        ...batchConstrains,
       });
     } else if (ids_given) {
       ret = await VaccinationModel.deleteMany({
         _id: { $in: req.body.ids },
         booked: false,
         org,
+        ...batchConstrains,
       });
     } else {
-      ret = await VaccinationModel.deleteMany({ booked: false, org });
+      ret = await VaccinationModel.deleteMany({
+        booked: false,
+        org,
+        ...batchConstrains,
+      });
+    }
+
+    if (!ret) throw new ERROR("Error while removing", 500, { err: ret });
+
+    return res
+      .status(200)
+      .json({ message: "Successful operation", status: ret });
+  } catch (err) {
+    return HandleError(err, res);
+  }
+});
+
+router.delete("/force", check_for_access_token, allowOrg, async (req, res) => {
+  try {
+    const user = await UserModel.exists({ _id: req.user.id });
+    if (!user) throw new NOTFOUND("Org User");
+
+    const org = await OrgModel.findOne({ user: req.user.id });
+    if (!org) throw new NOTFOUND("Org");
+
+    if (!req.body.reason || typeof req.body.reason != "string") {
+      throw new NOTFOUND("Reason (reason: String)");
+    }
+
+    const batch_code_given = req.body?.batch_code ? true : false;
+    const id_given = req.body?.id ? true : false;
+    const ids_given = req.body?.ids ? true : false;
+
+    const batchConstrains = batch_code_given
+      ? { batch_code: req.body.batch_code }
+      : {};
+
+    let ret;
+
+    if (id_given) {
+      ret = await VaccinationModel.findOne({
+        _id: req.body.id,
+        done: false,
+        org,
+        ...batchConstrains,
+      });
+
+      if (!ret) throw new NOTFOUND("Vaccine");
+
+      await NotificationModel.create({
+        title: "Booking cancelled",
+        info: req.body.reason,
+        time: Date.now(),
+        user: ret.patient,
+      });
+      await ret.remove();
+    } else if (ids_given) {
+      ret = await VaccinationModel.find({
+        _id: { $in: req.body.ids },
+        done: false,
+        org,
+        ...batchConstrains,
+      });
+
+      let notificationBulk = [];
+
+      ret.forEach((item) => {
+        notificationBulk.push({
+          title: "Booking cancelled",
+          info: req.body.reason,
+          time: Date.now(),
+          user: item.patient,
+        });
+      });
+
+      await NotificationModel.insertMany(notificationBulk);
+
+      ret = await VaccinationModel.deleteMany({
+        _id: { $in: req.body.ids },
+        done: false,
+        org,
+        ...batchConstrains,
+      });
+    } else {
+      ret = await VaccinationModel.find({
+        done: false,
+        org,
+        ...batchConstrains,
+      });
+
+      let notificationBulk = [];
+
+      ret.forEach((item) => {
+        notificationBulk.push({
+          title: "Booking cancelled",
+          info: req.body.reason,
+          time: Date.now(),
+          user: item.patient,
+        });
+      });
+
+      await NotificationModel.insertMany(notificationBulk);
+
+      ret = await VaccinationModel.deleteMany({
+        done: false,
+        org,
+        ...batchConstrains,
+      });
     }
 
     if (!ret) throw new ERROR("Error while removing", 500, { err: ret });

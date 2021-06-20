@@ -138,6 +138,7 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
         patient: null,
         booked: false,
         booking_date: null,
+        patient_details: null,
       }
     );
 
