@@ -197,6 +197,31 @@ router.post(
   }
 );
 
+router.post("/done", check_for_access_token, allowOrg, async (req, res) => {
+  try {
+    const user = await UserModel.exists({ _id: req.user.id });
+    if (!user) throw new NOTFOUND("Org User");
+
+    const org = await OrgModel.findOne({ user: req.user.id });
+    if (!org) throw new NOTFOUND("Org");
+
+    const idProvided = req.body?.id ? true : false;
+    const doneProvided = req.body.done != undefined ? true : false;
+
+    if (!doneProvided || !idProvided)
+      throw new NOTFOUND("done: boolean or id: string");
+
+    await BloodTestModel.updateOne(
+      { _id: req.body.id, org, booked: true },
+      { done: req.body.done }
+    );
+
+    return res.status(200).json({ message: "Successful operation" });
+  } catch (err) {
+    return HandleError(err, res);
+  }
+});
+
 router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
   try {
     const user = await UserModel.exists({ _id: req.user.id });
