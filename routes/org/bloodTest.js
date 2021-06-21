@@ -233,6 +233,11 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
     const id_given = req.body?.id ? true : false;
     const ids_given = req.body?.ids ? true : false;
 
+    const batch_code_given = req.body?.batch_code ? true : false;
+    const batchConstrains = batch_code_given
+      ? { batch_code: req.body.batch_code }
+      : {};
+
     let ret;
 
     if (id_given) {
@@ -240,15 +245,21 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
         _id: req.body.id,
         booked: false,
         org,
+        ...batchConstrains,
       });
     } else if (ids_given) {
       ret = await BloodTestModel.deleteMany({
         _id: { $in: req.body.ids },
         booked: false,
         org,
+        ...batchConstrains,
       });
     } else {
-      ret = await BloodTestModel.deleteMany({ booked: false, org });
+      ret = await BloodTestModel.deleteMany({
+        booked: false,
+        org,
+        ...batchConstrains,
+      });
     }
 
     if (!ret) throw new ERROR("Error while removing", 500, { err: ret });
