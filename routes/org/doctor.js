@@ -5,6 +5,7 @@ const {
   allowOrg,
   allowUser,
   allowDoctor,
+  allowAll,
 } = require("../../middlewares/auth");
 const { _sendInvitation, _joinOrg } = require("../../utils/validationProps");
 const { sendMail } = require("../../utils/email");
@@ -12,6 +13,83 @@ const { pushNotification } = require("../../utils/notification");
 const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
 const AppointmentModel = require("../../db/models/services/appointment");
+
+router.get("/", check_for_access_token, allowAll, async (req, res) => {
+  try {
+    const findByCity = req.query?.city ? true : false;
+    const findByDistrict = req.query?.district ? true : false;
+    const findByOrg = req.query?.org ? true : false;
+    const findByPin = req.query?.pin ? true : false;
+    const keywordsGiven = req.query?.search ? true : false;
+
+    const orgContrains = {
+      path: "doctor_info.org",
+      select: ["name", "logo_url", "helpline_no", "address"],
+    };
+
+    const pinConstrains = findByPin
+      ? { "address.pinCode": Number(req.query.pin) }
+      : {};
+
+    const doctorFilter = [
+      "-dob",
+      "-is_profile_completed",
+      "-contact.mobile_no",
+    ];
+
+    const searchConstrains = keywordsGiven
+      ? { name: { $regex: req.query.search, $options: "i" } }
+      : {};
+
+    if (findByCity) {
+      users = await UserModel.find({
+        role: "doctor",
+        "address.city": req.query.city,
+        "doctor_info.active": true,
+        ...pinConstrains,
+        ...searchConstrains,
+      })
+        .select(doctorFilter)
+        .populate(orgContrains);
+    } else if (findByDistrict) {
+      users = await UserModel.find({
+        role: "doctor",
+        "address.district": req.query.district,
+        "doctor_info.active": true,
+        ...pinConstrains,
+        ...searchConstrains,
+      })
+        .select(doctorFilter)
+        .populate(orgContrains);
+    } else if (findByOrg) {
+      users = await UserModel.find({
+        role: "doctor",
+        "doctor_info.active": true,
+        "doctor_info.org": req.query.org,
+        ...pinConstrains,
+        ...searchConstrains,
+      })
+        .select(doctorFilter)
+        .populate(orgContrains);
+    } else {
+      users = await UserModel.find({
+        role: "doctor",
+        "doctor_info.active": true,
+        ...pinConstrains,
+        ...searchConstrains,
+      })
+        .select(doctorFilter)
+        .populate(orgContrains);
+    }
+
+    return res.status(200).json({
+      message: "Successful operation",
+      users: users,
+    });
+  } catch (err) {
+    return HandleError(err, res);
+  }
+});
 
 router.post(
   "/invitation",
