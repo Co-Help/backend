@@ -100,6 +100,9 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
     const user = await UserModel.findById(req.user.id);
     if (!user) throw new NOTFOUND("Org User");
 
+    const org = await OrgModel.findOne({ user });
+    if (!org) throw new NOTFOUND("Org");
+
     const { id } = req.body;
     if (!id) throw new NOTFOUND("Emergency id");
 
