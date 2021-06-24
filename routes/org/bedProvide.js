@@ -78,7 +78,7 @@ router.post("/edit", check_for_access_token, allowOrg, async (req, res) => {
     if (!service) throw new NOTFOUND("BloodProvide Obj");
 
     service.cost = cost ? cost : service.cost;
-    service.available = available ? available : service.available;
+    service.available = available != undefined ? available : service.available;
     service.total_beds = total_beds ? total_beds : service.total_beds;
     service.available_beds = available_beds
       ? available_beds
