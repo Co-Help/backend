@@ -82,7 +82,7 @@ router.post("/edit", check_for_access_token, allowOrg, async (req, res) => {
 
     service.cost = cost ? cost : service.cost;
     service.group = group ? group : service.group;
-    service.available = available ? available : service.available;
+    service.available = available != undefined ? available : service.available;
     service.info = info ? info : service.info;
     await service.save();
 
