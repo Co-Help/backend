@@ -77,12 +77,12 @@ router.post("/edit", check_for_access_token, allowOrg, async (req, res) => {
     const service = await ServiceModel.findById(id);
     if (!service) throw new NOTFOUND("BloodProvide Obj");
 
-    service.cost = cost ? cost : service.cost;
+    service.cost = cost != undefined ? cost : service.cost;
     service.available = available != undefined ? available : service.available;
-    service.total_beds = total_beds ? total_beds : service.total_beds;
-    service.available_beds = available_beds
-      ? available_beds
-      : service.available_beds;
+    service.total_beds =
+      total_beds != undefined ? total_beds : service.total_beds;
+    service.available_beds =
+      available_beds != undefined ? available_beds : service.available_beds;
     service.info = info ? info : service.info;
 
     if (service.total_beds < service.available_beds)

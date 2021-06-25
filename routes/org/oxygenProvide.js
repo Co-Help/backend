@@ -1,7 +1,10 @@
 const router = require("express").Router();
 const { check_for_access_token, allowOrg } = require("../../middlewares/auth");
 const { NOTFOUND, HandleError, ERROR } = require("../../utils/error");
-const { _createOxygenProvide } = require("../../utils/validationProps");
+const {
+  _createOxygenProvide,
+  _editOxygenProvide,
+} = require("../../utils/validationProps");
 const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
 const ServiceModel = require("../../db/models/services/oxygenProvide");
@@ -155,28 +158,34 @@ router.post("/add", check_for_access_token, allowOrg, async (req, res) => {
   }
 });
 
-router.post("/edit", check_for_access_token, allowOrg, async (req, res) => {
-  try {
-    const user = await UserModel.exists({ _id: req.user.id });
-    if (!user) throw new NOTFOUND("Org User");
+router.post(
+  "/edit",
+  check_for_access_token,
+  allowOrg,
+  _editOxygenProvide,
+  async (req, res) => {
+    try {
+      const user = await UserModel.exists({ _id: req.user.id });
+      if (!user) throw new NOTFOUND("Org User");
 
-    const org = await OrgModel.findOne({ user: req.user.id });
-    if (!org) throw new NOTFOUND("Org");
+      const org = await OrgModel.findOne({ user: req.user.id });
+      if (!org) throw new NOTFOUND("Org");
 
-    const { cost, capacity, info, batch_code } = req.body;
+      const { cost, capacity, info, batch_code } = req.body;
 
-    await ServiceModel.updateMany({ batch_code, org, done: false }, { info });
+      await ServiceModel.updateMany({ batch_code, org, done: false }, { info });
 
-    await ServiceModel.updateMany(
-      { batch_code, org, booked: false },
-      { cost, capacity }
-    );
+      await ServiceModel.updateMany(
+        { batch_code, org, booked: false },
+        { cost, capacity }
+      );
 
-    return res.status(200).json({ message: "Successful operation" });
-  } catch (err) {
-    return HandleError(err, res);
+      return res.status(200).json({ message: "Successful operation" });
+    } catch (err) {
+      return HandleError(err, res);
+    }
   }
-});
+);
 
 router.post("/done", check_for_access_token, allowOrg, async (req, res) => {
   try {

@@ -80,7 +80,7 @@ router.post("/edit", check_for_access_token, allowOrg, async (req, res) => {
       throw new EXISTS("Same blood group");
     }
 
-    service.cost = cost ? cost : service.cost;
+    service.cost = cost != undefined ? cost : service.cost;
     service.group = group ? group : service.group;
     service.available = available != undefined ? available : service.available;
     service.info = info ? info : service.info;
