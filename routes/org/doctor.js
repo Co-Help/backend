@@ -27,9 +27,7 @@ router.get("/", check_for_access_token, allowAll, async (req, res) => {
       select: ["name", "logo_url", "helpline_no", "address"],
     };
 
-    const pinConstrains = findByPin
-      ? { "address.pinCode": Number(req.query.pin) }
-      : {};
+    const orgFilter = findByOrg ? { "doctor_info.org": req.query.org } : {};
 
     const doctorFilter = [
       "-dob",
@@ -41,46 +39,41 @@ router.get("/", check_for_access_token, allowAll, async (req, res) => {
       ? { name: { $regex: req.query.search, $options: "i" } }
       : {};
 
-    if (findByCity) {
-      users = await UserModel.find({
-        role: "doctor",
-        "address.city": req.query.city,
-        "doctor_info.active": true,
-        ...pinConstrains,
-        ...searchConstrains,
-      })
-        .select(doctorFilter)
-        .populate(orgContrains);
-    } else if (findByDistrict) {
-      users = await UserModel.find({
-        role: "doctor",
-        "address.district": req.query.district,
-        "doctor_info.active": true,
-        ...pinConstrains,
-        ...searchConstrains,
-      })
-        .select(doctorFilter)
-        .populate(orgContrains);
-    } else if (findByOrg) {
-      users = await UserModel.find({
-        role: "doctor",
-        "doctor_info.active": true,
-        "doctor_info.org": req.query.org,
-        ...pinConstrains,
-        ...searchConstrains,
-      })
-        .select(doctorFilter)
-        .populate(orgContrains);
-    } else {
-      users = await UserModel.find({
-        role: "doctor",
-        "doctor_info.active": true,
-        ...pinConstrains,
-        ...searchConstrains,
-      })
-        .select(doctorFilter)
-        .populate(orgContrains);
-    }
+    users = await UserModel.find({
+      role: "doctor",
+      "doctor_info.active": true,
+      ...searchConstrains,
+      ...orgFilter,
+    })
+      .select(doctorFilter)
+      .populate(orgContrains);
+
+    users = users.filter((item) => {
+      if (
+        findByPin &&
+        item.doctor_info.org.address.pinCode !== Number(req.query.pin)
+      ) {
+        return false;
+      }
+
+      if (
+        findByCity &&
+        item.doctor_info.org.address.city.toLowerCase() !==
+          req.query.city.toLowerCase()
+      ) {
+        return false;
+      }
+
+      if (
+        findByDistrict &&
+        item.doctor_info.org.address.district.toLowerCase() !==
+          req.query.district.toLowerCase()
+      ) {
+        return false;
+      }
+
+      return true;
+    });
 
     return res.status(200).json({
       message: "Successful operation",
