@@ -146,71 +146,92 @@ router.get("/search", check_for_access_token, async (req, res) => {
 
     if (findByCity) {
       vaccinations = vaccinations.filter(
-        (item) => item.org.address.city === req.query.city
+        (item) =>
+          item.org.address.city.toLowerCase() === req.query.city.toLowerCase()
       );
 
       blood_tests = blood_tests.filter(
-        (item) => item.org.address.city === req.query.city
+        (item) =>
+          item.org.address.city.toLowerCase() === req.query.city.toLowerCase()
       );
 
       blood_provides = blood_provides.filter(
-        (item) => item.org.address.city === req.query.city
+        (item) =>
+          item.org.address.city.toLowerCase() === req.query.city.toLowerCase()
       );
 
       oxygen_provides = oxygen_provides.filter(
-        (item) => item.org.address.city === req.query.city
+        (item) =>
+          item.org.address.city.toLowerCase() === req.query.city.toLowerCase()
       );
 
       bed_provides = bed_provides.filter(
-        (item) => item.org.address.city === req.query.city
+        (item) =>
+          item.org.address.city.toLowerCase() === req.query.city.toLowerCase()
       );
 
       appointments = appointments.filter(
-        (item) => item.org.address.city === req.query.city
+        (item) =>
+          item.org.address.city.toLowerCase() === req.query.city.toLowerCase()
       );
 
       emergencies = emergencies.filter(
-        (item) => item.org.address.city === req.query.city
+        (item) =>
+          item.org.address.city.toLowerCase() === req.query.city.toLowerCase()
       );
     }
 
     if (findByDistrict) {
       vaccinations = vaccinations.filter(
-        (item) => item.org.address.district === req.query.district
+        (item) =>
+          item.org.address.district.toLowerCase() ===
+          req.query.district.toLowerCase()
       );
 
       blood_tests = blood_tests.filter(
-        (item) => item.org.address.district === req.query.district
+        (item) =>
+          item.org.address.district.toLowerCase() ===
+          req.query.district.toLowerCase()
       );
 
       blood_provides = blood_provides.filter(
-        (item) => item.org.address.district === req.query.district
+        (item) =>
+          item.org.address.district.toLowerCase() ===
+          req.query.district.toLowerCase()
       );
 
       oxygen_provides = oxygen_provides.filter(
-        (item) => item.org.address.district === req.query.district
+        (item) =>
+          item.org.address.district.toLowerCase() ===
+          req.query.district.toLowerCase()
       );
 
       bed_provides = bed_provides.filter(
-        (item) => item.org.address.district === req.query.district
+        (item) =>
+          item.org.address.district.toLowerCase() ===
+          req.query.district.toLowerCase()
       );
 
       appointments = appointments.filter(
-        (item) => item.org.address.district === req.query.district
+        (item) =>
+          item.org.address.district.toLowerCase() ===
+          req.query.district.toLowerCase()
       );
 
       emergencies = emergencies.filter(
-        (item) => item.org.address.district === req.query.district
+        (item) =>
+          item.org.address.district.toLowerCase() ===
+          req.query.district.toLowerCase()
       );
     }
 
     vaccinations = filterOut(vaccinations);
     blood_tests = filterOut(blood_tests);
-    blood_provides = filterOut(blood_provides);
+    // blood_provides = filterOut(blood_provides);
     oxygen_provides = filterOut(oxygen_provides);
-    bed_provides = filterOut(bed_provides);
+    // bed_provides = filterOut(bed_provides);
     appointments = filterOut(appointments);
-    emergencies = filterOut(emergencies);
+    // emergencies = filterOut(emergencies);
 
     return res.status(200).json({
       message: "Successful operation",
