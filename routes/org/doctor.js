@@ -14,7 +14,7 @@ const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
 const AppointmentModel = require("../../db/models/services/appointment");
 
-router.get("/", check_for_access_token, allowAll, async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     const findByCity = req.query?.city ? true : false;
     const findByDistrict = req.query?.district ? true : false;
