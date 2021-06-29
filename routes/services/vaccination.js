@@ -23,11 +23,13 @@ router.get("/", check_for_access_token, allowAll, async (req, res) => {
     };
 
     const dozeConstrains = dozeProvided ? { vaccine_doze: req.query.doze } : {};
+    const timeContraints = { vaccine_date: { $gt: Date.now() } };
 
     if (findByCity) {
       vaccines = await VaccinationModel.find({
         booked: false,
         ...dozeConstrains,
+        ...timeContraints,
       }).populate(orgContrains);
 
       vaccines = vaccines.filter(
@@ -37,6 +39,7 @@ router.get("/", check_for_access_token, allowAll, async (req, res) => {
       vaccines = await VaccinationModel.find({
         booked: false,
         ...dozeConstrains,
+        ...timeContraints,
       }).populate(orgContrains);
 
       vaccines = vaccines.filter(
@@ -47,11 +50,13 @@ router.get("/", check_for_access_token, allowAll, async (req, res) => {
         org: req.query.org,
         booked: false,
         ...dozeConstrains,
+        ...timeContraints,
       }).populate(orgContrains);
     } else {
       vaccines = await VaccinationModel.find({
         booked: false,
         ...dozeConstrains,
+        ...timeContraints,
       }).populate(orgContrains);
     }
 

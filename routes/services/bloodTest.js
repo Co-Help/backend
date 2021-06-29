@@ -21,18 +21,22 @@ router.get("/", check_for_access_token, allowAll, async (req, res) => {
       select: ["name", "logo_url", "helpline_no", "address"],
     };
 
+    const timeContraints = { test_date: { $gt: Date.now() } };
+
     if (findByCity) {
-      blood_tests = await BloodTestModel.find({ booked: false }).populate(
-        orgContrains
-      );
+      blood_tests = await BloodTestModel.find({
+        booked: false,
+        ...timeContraints,
+      }).populate(orgContrains);
 
       blood_tests = blood_tests.filter(
         (item) => item.org.address.city === req.query.city
       );
     } else if (findByDistrict) {
-      blood_tests = await BloodTestModel.find({ booked: false }).populate(
-        orgContrains
-      );
+      blood_tests = await BloodTestModel.find({
+        booked: false,
+        ...timeContraints,
+      }).populate(orgContrains);
 
       blood_tests = blood_tests.filter(
         (item) => item.org.address.district === req.query.district
@@ -41,10 +45,12 @@ router.get("/", check_for_access_token, allowAll, async (req, res) => {
       blood_tests = await BloodTestModel.find({
         org: req.query.org,
         booked: false,
+        ...timeContraints,
       }).populate(orgContrains);
     } else {
       blood_tests = await BloodTestModel.find({
         booked: false,
+        ...timeContraints,
       }).populate(orgContrains);
     }
 

@@ -24,17 +24,23 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
       match: { "doctor_info.active": { $eq: true } },
     };
 
+    const timeContraints = { appointment_date: { $gt: Date.now() } };
+
     if (findByDoctor) {
       appointments = await AppointmentModel.find({
         doctor: req.query.doctor,
         booked: false,
+        ...timeContraints,
       })
         .populate(orgConstraints)
         .populate(doctorConstraints);
     }
 
     if (findByCity || findByDistrict) {
-      appointments = await AppointmentModel.find({ booked: false })
+      appointments = await AppointmentModel.find({
+        booked: false,
+        ...timeContraints,
+      })
         .populate(orgConstraints)
         .populate(doctorConstraints);
 
@@ -55,6 +61,7 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
       appointments = await AppointmentModel.find({
         org: req.query.org,
         booked: false,
+        ...timeContraints,
       })
         .populate(orgConstraints)
         .populate(doctorConstraints);
