@@ -6,6 +6,7 @@ const { HandleError, NOTFOUND, ERROR } = require("../../utils/error");
 const UserModel = require("../../db/models/user");
 // const OrgModel = require("../../db/models/org");
 const BloodTestModel = require("../../db/models/services/bloodTest");
+const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
 
 router.get("/", check_for_access_token, allowAll, async (req, res) => {
@@ -131,17 +132,26 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
     const is_id_given = req.body?.id ? true : false;
     if (!is_id_given) throw new NOTFOUND("id (blood_test_id)");
 
-    const ret = await BloodTestModel.findOneAndUpdate(
-      { _id: req.body.id, done: false, patient: user },
-      {
-        patient: null,
-        booked: false,
-        booking_date: null,
-        patient_details: null,
-      }
-    );
+    const record = await BloodTestModel.findOne({
+      _id: req.body.id,
+      done: false,
+      patient: user,
+    });
+    if (!record) throw new NOTFOUND("Model");
 
-    if (!ret)
+    const config = await ConfigModel.findOne({ batch_code: record.batch_code });
+    if (!config) throw new NOTFOUND("Config");
+
+    record.patient = null;
+    record.booked = false;
+    record.booking_date = null;
+    record.patient_details = null;
+    record.cost = config.cost;
+    record.test_date = config.date;
+    record.info = config.info;
+    await record.save();
+
+    if (!record)
       throw new ERROR("Booked record not found or its already finished");
 
     return res.status(200).json({ message: "Successful operation" });

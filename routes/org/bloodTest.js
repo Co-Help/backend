@@ -9,6 +9,7 @@ const {
 const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
 const BloodTestModel = require("../../db/models/services/bloodTest");
+const ConfigModel = require("../../db/models/config");
 
 router.get("/", check_for_access_token, allowOrg, async (req, res) => {
   try {
@@ -18,15 +19,24 @@ router.get("/", check_for_access_token, allowOrg, async (req, res) => {
     const blood_tests = await BloodTestModel.find({ org });
     let filteredData = [];
 
-    blood_tests.forEach((item) => {
+    for (let i = 0; i < blood_tests.length; i++) {
       const exists = filteredData.find(
-        (fItem) => fItem.batch_code === item.batch_code
+        (fItem) => fItem.batch_code === blood_tests[i].batch_code
       );
 
       if (!exists) {
-        filteredData.push(item);
+        const config = await ConfigModel.findOne({
+          batch_code: blood_tests[i].batch_code,
+        });
+        if (!config) throw new NOTFOUND("Config");
+
+        blood_tests[i].cost = config.cost;
+        blood_tests[i].test_date = config.date;
+        blood_tests[i].info = config.info;
+
+        filteredData.push(blood_tests[i]);
       }
-    });
+    }
 
     return res.status(200).json({
       message: "Successful operation",
@@ -118,6 +128,17 @@ router.post(
         });
         await blood_test.save();
       }
+
+      const config = new ConfigModel({
+        cost,
+        info,
+        date: test_date,
+        batch_code,
+        org,
+        service: "BLOOD_TEST",
+      });
+      await config.save();
+
       return res.status(200).json({ message: "Successful operation" });
     } catch (err) {
       return HandleError(err, res);
@@ -140,21 +161,16 @@ router.post(
 
       const { quantity, batch_code } = req.body;
 
-      const oneObj = await BloodTestModel.findOne({ batch_code, org });
-      if (!oneObj)
-        throw new ERROR(
-          "Can't able to add because no branch is available.",
-          404,
-          { invalid_batch_code: true }
-        );
+      const config = await ConfigModel.findOne({ batch_code });
+      if (!config) throw new NOTFOUND("Config");
 
       for (let i = 0; i < quantity; i++) {
         const blood_test = new BloodTestModel({
-          cost: oneObj.cost,
-          info: oneObj.info,
-          test_date: oneObj.test_date,
-          batch_code: oneObj.batch_code,
-          org: oneObj.org,
+          cost: config.cost,
+          info: config.info,
+          test_date: config.date,
+          batch_code: config.batch_code,
+          org,
         });
         await blood_test.save();
       }
@@ -188,6 +204,15 @@ router.post(
       await BloodTestModel.updateMany(
         { batch_code, org, booked: false },
         { cost }
+      );
+
+      await ConfigModel.findOneAndUpdate(
+        { batch_code },
+        {
+          cost,
+          info,
+          date: test_date,
+        }
       );
 
       return res.status(200).json({ message: "Successful operation" });
@@ -263,6 +288,17 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
     }
 
     if (!ret) throw new ERROR("Error while removing", 500, { err: ret });
+
+    // Checking if any obj left from same query
+    const exists = await BloodTestModel.exists({ org, ...batchConstrains });
+
+    if (!exists) {
+      await ConfigModel.deleteMany({
+        org,
+        ...batchConstrains,
+        service: "BLOOD_TEST",
+      });
+    }
 
     return res
       .status(200)
