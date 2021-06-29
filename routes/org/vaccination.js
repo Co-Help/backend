@@ -10,6 +10,7 @@ const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
 const VaccinationModel = require("../../db/models/services/vaccination");
 const NotificationModel = require("../../db/models/notification");
+const ConfigModel = require("../../db/models/config");
 
 router.get("/", check_for_access_token, allowOrg, async (req, res) => {
   try {
@@ -19,15 +20,27 @@ router.get("/", check_for_access_token, allowOrg, async (req, res) => {
     const vaccines = await VaccinationModel.find({ org });
     let filteredData = [];
 
-    vaccines.forEach((item) => {
+    for (let i = 0; i < vaccines.length; i++) {
       const exists = filteredData.find(
-        (fItem) => fItem.batch_code === item.batch_code
+        (fItem) => fItem.batch_code === vaccines[i].batch_code
       );
 
       if (!exists) {
-        filteredData.push(item);
+        const config = await ConfigModel.findOne({
+          batch_code: vaccines[i].batch_code,
+        });
+        if (!config) throw new NOTFOUND("Config");
+
+        vaccines[i].cost = config.cost;
+        vaccines[i].vaccine_date = config.date;
+        vaccines[i].info = config.info;
+        vaccines[i].vaccine_name = config.vaccine_name;
+        vaccines[i].min_age = config.min_age;
+        vaccines[i].max_age = config.max_age;
+
+        filteredData.push(vaccines[i]);
       }
-    });
+    }
 
     return res.status(200).json({
       message: "Successful operation",
@@ -135,6 +148,20 @@ router.post(
         });
         await vaccine.save();
       }
+
+      const config = new ConfigModel({
+        cost,
+        min_age,
+        max_age,
+        info,
+        batch_code,
+        org,
+        vaccine_name,
+        date: vaccine_date,
+        service: "VACCINE",
+      });
+      await config.save();
+
       return res.status(200).json({ message: "Successful operation" });
     } catch (err) {
       return HandleError(err, res);
@@ -165,16 +192,19 @@ router.post(
           { invalid_batch_code: true }
         );
 
+      const config = await ConfigModel.findOne({ batch_code, org });
+      if (!config) throw new NOTFOUND("Config");
+
       for (let i = 0; i < quantity; i++) {
         const vaccine = new VaccinationModel({
-          cost: oneObj.cost,
-          age_restriction: oneObj.age_restriction,
-          info: oneObj.info,
-          org: oneObj.org,
-          vaccine_name: oneObj.vaccine_name,
+          cost: config.cost,
+          age_restriction: { min_age: config.min_age, max_age: config.max_age },
+          info: config.info,
+          org: config.org,
+          vaccine_name: config.vaccine_name,
           vaccine_doze: oneObj.vaccine_doze,
-          vaccine_date: oneObj.vaccine_date,
-          batch_code: oneObj.batch_code,
+          vaccine_date: config.date,
+          batch_code: config.batch_code,
         });
         await vaccine.save();
       }
@@ -223,6 +253,18 @@ router.post(
         { cost, age_restriction, vaccine_name }
       );
 
+      await ConfigModel.findOneAndUpdate(
+        { batch_code },
+        {
+          cost,
+          info,
+          min_age,
+          max_age,
+          date: vaccine_date,
+          vaccine_name,
+        }
+      );
+
       return res.status(200).json({ message: "Successful operation" });
     } catch (err) {
       return HandleError(err, res);
@@ -269,7 +311,7 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
 
     let ret;
 
-    const batchConstrains = batch_code_given
+    const batchConstraints = batch_code_given
       ? { batch_code: req.body.batch_code }
       : {};
 
@@ -278,20 +320,31 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
         _id: req.body.id,
         booked: false,
         org,
-        ...batchConstrains,
+        ...batchConstraints,
       });
     } else if (ids_given) {
       ret = await VaccinationModel.deleteMany({
         _id: { $in: req.body.ids },
         booked: false,
         org,
-        ...batchConstrains,
+        ...batchConstraints,
       });
     } else {
       ret = await VaccinationModel.deleteMany({
         booked: false,
         org,
-        ...batchConstrains,
+        ...batchConstraints,
+      });
+    }
+
+    // Checking if any obj left from same query
+    const exists = await VaccinationModel.exists({ org, ...batchConstraints });
+
+    if (!exists) {
+      await ConfigModel.deleteMany({
+        org,
+        ...batchConstraints,
+        service: "VACCINE",
       });
     }
 
@@ -321,7 +374,7 @@ router.delete("/force", check_for_access_token, allowOrg, async (req, res) => {
     const id_given = req.body?.id ? true : false;
     const ids_given = req.body?.ids ? true : false;
 
-    const batchConstrains = batch_code_given
+    const batchConstraints = batch_code_given
       ? { batch_code: req.body.batch_code }
       : {};
 
@@ -332,7 +385,7 @@ router.delete("/force", check_for_access_token, allowOrg, async (req, res) => {
         _id: req.body.id,
         done: false,
         org,
-        ...batchConstrains,
+        ...batchConstraints,
       });
 
       if (!ret) throw new NOTFOUND("Vaccine");
@@ -349,7 +402,7 @@ router.delete("/force", check_for_access_token, allowOrg, async (req, res) => {
         _id: { $in: req.body.ids },
         done: false,
         org,
-        ...batchConstrains,
+        ...batchConstraints,
       });
 
       let notificationBulk = [];
@@ -369,13 +422,13 @@ router.delete("/force", check_for_access_token, allowOrg, async (req, res) => {
         _id: { $in: req.body.ids },
         done: false,
         org,
-        ...batchConstrains,
+        ...batchConstraints,
       });
     } else {
       ret = await VaccinationModel.find({
         done: false,
         org,
-        ...batchConstrains,
+        ...batchConstraints,
       });
 
       let notificationBulk = [];
@@ -394,11 +447,22 @@ router.delete("/force", check_for_access_token, allowOrg, async (req, res) => {
       ret = await VaccinationModel.deleteMany({
         done: false,
         org,
-        ...batchConstrains,
+        ...batchConstraints,
       });
     }
 
     if (!ret) throw new ERROR("Error while removing", 500, { err: ret });
+
+    // Checking if any obj left from same query
+    const exists = await VaccinationModel.exists({ org, ...batchConstraints });
+
+    if (!exists) {
+      await ConfigModel.deleteMany({
+        org,
+        ...batchConstraints,
+        service: "VACCINE",
+      });
+    }
 
     return res
       .status(200)

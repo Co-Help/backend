@@ -6,6 +6,7 @@ const { HandleError, NOTFOUND, ERROR } = require("../../utils/error");
 const UserModel = require("../../db/models/user");
 // const OrgModel = require("../../db/models/org");
 const VaccinationModel = require("../../db/models/services/vaccination");
+const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
 
 router.get("/", check_for_access_token, allowAll, async (req, res) => {
@@ -137,13 +138,30 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
     const is_id_given = req.body?.id ? true : false;
     if (!is_id_given) throw new NOTFOUND("id (vaccination_id)");
 
-    const ret = await VaccinationModel.findOneAndUpdate(
+    const record = await VaccinationModel.findOne({
+      _id: req.body.id,
+      done: false,
+      patient: user,
+    });
+    if (!record) throw new NOTFOUND("Record");
+
+    const config = await ConfigModel.findOne({ batch_code: record.batch_code });
+    if (!config) throw new NOTFOUND("Config");
+
+    const ret = await VaccinationModel.updateMany(
       { _id: req.body.id, done: false, patient: user },
       {
         patient: null,
         booked: false,
         booking_date: null,
         patient_details: null,
+        cost: config.cost,
+        capacity: config.capacity,
+        info: config.info,
+        min_age: config.min_age,
+        max_age: config.max_age,
+        vaccine_name: config.vaccine_name,
+        vaccine_date: config.date,
       }
     );
 
