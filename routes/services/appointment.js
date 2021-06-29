@@ -2,6 +2,7 @@ const router = require("express").Router();
 const { check_for_access_token, allowUser } = require("../../middlewares/auth");
 const { HandleError, NOTFOUND, ERROR } = require("../../utils/error");
 const AppointmentModel = require("../../db/models/services/appointment");
+const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
 
 router.get("/", check_for_access_token, allowUser, async (req, res) => {
@@ -155,39 +156,42 @@ router.post("/cancel", check_for_access_token, allowUser, async (req, res) => {
   try {
     const id_given = req.body?.id ? true : false;
 
-    if (id_given) {
-      const appointment = await AppointmentModel.findOne({
-        _id: req.body?.id,
-        patient: req.user.id,
+    if (!id_given) throw new NOTFOUND("id");
+
+    const appointment = await AppointmentModel.findOne({
+      _id: req.body?.id,
+      patient: req.user.id,
+    });
+
+    if (!appointment) {
+      throw new ERROR("You aren't booked any appointment", 400, {
+        is_booked: false,
       });
-
-      if (!appointment) {
-        throw new ERROR("You aren't booked any appointment", 400, {
-          is_booked: false,
-        });
-      }
-
-      if (appointment.done) {
-        throw new ERROR("You can't cancel a finished appointment", 400, {
-          done: true,
-        });
-      }
-
-      await AppointmentModel.findOneAndUpdate(
-        {
-          _id: req.body?.id,
-          patient: req.user.id,
-        },
-        {
-          booked: false,
-          patient: null,
-          booking_time: null,
-          patient_details: null,
-        }
-      );
-    } else {
-      throw new NOTFOUND("id");
     }
+
+    if (appointment.done) {
+      throw new ERROR("You can't cancel a finished appointment", 400, {
+        done: true,
+      });
+    }
+
+    const record = await AppointmentModel.findOne({
+      _id: req.body?.id,
+      patient: req.user.id,
+    });
+    if (!record) throw new NOTFOUND("Model");
+
+    const config = await ConfigModel.findOne({ batch_code: record.batch_code });
+    if (!config) throw new NOTFOUND("Config");
+
+    record.patient = null;
+    record.booked = false;
+    record.booking_time = null;
+    record.patient_details = null;
+    record.cost = config.cost;
+    record.appointment_date = config.date;
+    record.info = config.info;
+    await record.save();
 
     return res.status(200).json({
       message: "Successful operation",

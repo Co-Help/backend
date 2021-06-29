@@ -12,6 +12,7 @@ const {
 const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
 const ServiceModel = require("../../db/models/services/appointment");
+const ConfigModel = require("../../db/models/config");
 
 router.get("/", check_for_access_token, allowDoctorOrg, async (req, res) => {
   try {
@@ -29,23 +30,24 @@ router.get("/", check_for_access_token, allowDoctorOrg, async (req, res) => {
     });
     let filteredData = [];
 
-    services.forEach((item) => {
+    for (let i = 0; i < services.length; i++) {
       let exists = filteredData.find(
-        (fItem) => fItem.batch_code === item.batch_code
+        (fItem) => fItem.batch_code === services[i].batch_code
       );
 
       if (!exists) {
-        filteredData.push(item);
-      } else if (exists.booked && !item.booked) {
-        exists.patient_details = {};
-        exists._id = item._id;
-        exists.cost = item.cost;
-        exists.done = item.done;
-        exists.booked = item.booked;
-        exists.appointment_date = item.appointment_date;
-        exists.info = item.info;
+        const config = await ConfigModel.findOne({
+          batch_code: services[i].batch_code,
+        });
+        if (!config) throw new NOTFOUND("Config");
+
+        services[i].cost = config.cost;
+        services[i].appointment_date = config.date;
+        services[i].info = config.info;
+
+        filteredData.push(services[i]);
       }
-    });
+    }
 
     return res.status(200).json({
       message: "Successful operation",
@@ -159,6 +161,17 @@ router.post(
         });
         await service.save();
       }
+
+      const config = new ConfigModel({
+        cost,
+        info,
+        date: appointment_date,
+        batch_code,
+        org,
+        service: "APPOINTMENT",
+      });
+      await config.save();
+
       return res.status(200).json({ message: "Successful operation" });
     } catch (err) {
       return HandleError(err, res);
@@ -176,23 +189,17 @@ router.post("/add", check_for_access_token, allowDoctor, async (req, res) => {
 
     const { quantity, batch_code } = req.body;
 
-    const oneObj = await ServiceModel.findOne({ batch_code, org });
-    if (!oneObj)
-      throw new ERROR(
-        "Can't able to add because no branch is available.",
-        404,
-        { invalid_batch_code: true }
-      );
+    const config = await ConfigModel.findOne({ batch_code });
+    if (!config) throw new NOTFOUND("Config");
 
     for (let i = 0; i < quantity; i++) {
       const service = new ServiceModel({
-        cost: oneObj.cost,
-        doctor: oneObj.doctor,
-        org: oneObj.org,
-        appointment_date: oneObj.appointment_date,
-        booking_time: oneObj.booking_time,
-        info: oneObj.info,
-        batch_code: oneObj.batch_code,
+        cost: config.cost,
+        doctor: user,
+        org: org,
+        appointment_date: config.date,
+        info: config.info,
+        batch_code: config.batch_code,
       });
       await service.save();
     }
@@ -225,6 +232,15 @@ router.post(
       await ServiceModel.updateMany(
         { batch_code, org, booked: false, doctor: user },
         { cost }
+      );
+
+      await ConfigModel.findOneAndUpdate(
+        { batch_code },
+        {
+          cost,
+          info,
+          date: appointment_date,
+        }
       );
 
       return res.status(200).json({ message: "Successful operation" });
@@ -266,6 +282,10 @@ router.delete("/", check_for_access_token, allowDoctor, async (req, res) => {
 
     const id_given = req.body?.id ? true : false;
     const ids_given = req.body?.ids ? true : false;
+    const batch_code_given = req.body?.batch_code ? true : false;
+    const batchConstrains = batch_code_given
+      ? { batch_code: req.body.batch_code }
+      : {};
 
     let ret;
 
@@ -275,6 +295,7 @@ router.delete("/", check_for_access_token, allowDoctor, async (req, res) => {
         booked: false,
         org,
         doctor: user,
+        ...batchConstrains,
       });
     } else if (ids_given) {
       ret = await ServiceModel.deleteMany({
@@ -282,12 +303,29 @@ router.delete("/", check_for_access_token, allowDoctor, async (req, res) => {
         booked: false,
         org,
         doctor: user,
+        ...batchConstrains,
       });
     } else {
-      ret = await ServiceModel.deleteMany({ booked: false, org, doctor: user });
+      ret = await ServiceModel.deleteMany({
+        booked: false,
+        org,
+        doctor: user,
+        ...batchConstrains,
+      });
     }
 
     if (!ret) throw new ERROR("Error while removing", 500, { err: ret });
+
+    // Checking if any obj left from same query
+    const exists = await ServiceModel.exists({ org, ...batchConstrains });
+
+    if (!exists) {
+      await ConfigModel.deleteMany({
+        org,
+        ...batchConstrains,
+        service: "APPOINTMENT",
+      });
+    }
 
     return res
       .status(200)
