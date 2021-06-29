@@ -24,16 +24,26 @@ router.get("/", check_for_access_token, allowDoctorOrg, async (req, res) => {
 
     const servicefilter =
       req.user.role === "org" ? { org } : { org, doctor: req.user.id };
-    const services = await ServiceModel.find(servicefilter);
+    const services = await ServiceModel.find(servicefilter).sort({
+      appointment_date: -1,
+    });
     let filteredData = [];
 
     services.forEach((item) => {
-      const exists = filteredData.find(
+      let exists = filteredData.find(
         (fItem) => fItem.batch_code === item.batch_code
       );
 
       if (!exists) {
         filteredData.push(item);
+      } else if (exists.booked && !item.booked) {
+        exists.patient_details = {};
+        exists._id = item._id;
+        exists.cost = item.cost;
+        exists.done = item.done;
+        exists.booked = item.booked;
+        exists.appointment_date = item.appointment_date;
+        exists.info = item.info;
       }
     });
 
@@ -67,7 +77,9 @@ router.get(
           ? { org, batch_code: req.query.batch_code }
           : { doctor: req.user.id, org, batch_code: req.query.batch_code };
 
-      const services = await ServiceModel.find(filter);
+      const services = await ServiceModel.find(filter).sort({
+        appointment_date: -1,
+      });
 
       return res.status(200).json({
         message: "Successful operation",
