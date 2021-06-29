@@ -8,6 +8,7 @@ const {
 const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
 const ServiceModel = require("../../db/models/services/oxygenProvide");
+const ConfigModel = require("../../db/models/config");
 
 router.get("/", check_for_access_token, allowOrg, async (req, res) => {
   try {
@@ -17,15 +18,24 @@ router.get("/", check_for_access_token, allowOrg, async (req, res) => {
     const services = await ServiceModel.find({ org });
     let filteredData = [];
 
-    services.forEach((item) => {
+    for (let i = 0; i < services.length; i++) {
       const exists = filteredData.find(
-        (fItem) => fItem.batch_code === item.batch_code
+        (fItem) => fItem.batch_code === services[i].batch_code
       );
 
       if (!exists) {
-        filteredData.push(item);
+        const config = await ConfigModel.findOne({
+          batch_code: services[i].batch_code,
+        });
+        if (!config) throw new NOTFOUND("Config");
+
+        services[i].cost = config.cost;
+        services[i].capacity = config.capacity;
+        services[i].info = config.info;
+
+        filteredData.push(services[i]);
       }
-    });
+    }
 
     return res.status(200).json({
       message: "Successful operation",
@@ -117,6 +127,17 @@ router.post(
         });
         await service.save();
       }
+
+      const config = new ConfigModel({
+        cost,
+        info,
+        capacity,
+        batch_code,
+        service: "OXYGEN",
+        org,
+      });
+      await config.save();
+
       return res.status(200).json({ message: "Successful operation" });
     } catch (err) {
       return HandleError(err, res);
@@ -134,21 +155,16 @@ router.post("/add", check_for_access_token, allowOrg, async (req, res) => {
 
     const { quantity, batch_code } = req.body;
 
-    const oneObj = await ServiceModel.findOne({ batch_code, org });
-    if (!oneObj)
-      throw new ERROR(
-        "Can't able to add because no branch is available.",
-        404,
-        { invalid_batch_code: true }
-      );
+    const config = await ConfigModel.findOne({ batch_code, org });
+    if (!config) throw new NOTFOUND("Config");
 
     for (let i = 0; i < quantity; i++) {
       const service = new ServiceModel({
-        cost: oneObj.cost,
-        capacity: oneObj.capacity,
-        info: oneObj.info,
-        batch_code: oneObj.batch_code,
-        org: oneObj.org,
+        cost: config.cost,
+        capacity: config.capacity,
+        info: config.info,
+        batch_code: config.batch_code,
+        org: config.org,
       });
       await service.save();
     }
@@ -178,6 +194,15 @@ router.post(
       await ServiceModel.updateMany(
         { batch_code, org, booked: false },
         { cost, capacity }
+      );
+
+      await ConfigModel.findOneAndUpdate(
+        { batch_code },
+        {
+          cost,
+          info,
+          capacity,
+        }
       );
 
       return res.status(200).json({ message: "Successful operation" });
@@ -224,7 +249,7 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
     const ids_given = req.body?.ids ? true : false;
     const batch_given = req.body?.batch_code ? true : false;
 
-    let batch_constrains = batch_given
+    let batchConstraints = batch_given
       ? { batch_code: req.body.batch_code }
       : {};
 
@@ -235,24 +260,35 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
         _id: req.body.id,
         booked: false,
         org,
-        ...batch_constrains,
+        ...batchConstraints,
       });
     } else if (ids_given) {
       ret = await ServiceModel.deleteMany({
         _id: { $in: req.body.ids },
         booked: false,
         org,
-        ...batch_constrains,
+        ...batchConstraints,
       });
     } else {
       ret = await ServiceModel.deleteMany({
         booked: false,
         org,
-        ...batch_constrains,
+        ...batchConstraints,
       });
     }
 
     if (!ret) throw new ERROR("Error while removing", 500, { err: ret });
+
+    // Checking if any obj left from same query
+    const exists = await ServiceModel.exists({ org, ...batchConstraints });
+
+    if (!exists) {
+      await ConfigModel.deleteMany({
+        org,
+        ...batchConstraints,
+        service: "OXYGEN",
+      });
+    }
 
     return res
       .status(200)

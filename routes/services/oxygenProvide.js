@@ -6,6 +6,7 @@ const { HandleError, NOTFOUND, ERROR } = require("../../utils/error");
 const UserModel = require("../../db/models/user");
 // const OrgModel = require("../../db/models/org");
 const ServiceModel = require("../../db/models/services/oxygenProvide");
+const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
 
 router.get("/", check_for_access_token, allowAll, async (req, res) => {
@@ -193,6 +194,16 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
     const is_booking_date_given = req.body?.booking_date ? true : false;
     if (!is_booking_date_given) throw new NOTFOUND("booking_date");
 
+    let record = await ServiceModel.findOne({
+      booking_date: req.body.booking_date,
+      done: false,
+      buyer: user,
+    });
+    if (!record) throw new NOTFOUND("Model");
+
+    const config = await ConfigModel.findOne({ batch_code: record.batch_code });
+    if (!config) throw new NOTFOUND("Config");
+
     const ret = await ServiceModel.updateMany(
       { booking_date: req.body.booking_date, done: false, buyer: user },
       {
@@ -200,6 +211,9 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
         booked: false,
         booking_date: null,
         patient_details: null,
+        cost: config.cost,
+        capacity: config.capacity,
+        info: config.info,
       }
     );
 
