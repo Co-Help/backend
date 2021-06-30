@@ -2,6 +2,7 @@ const router = require("express").Router();
 const { check_for_access_token, allowUser } = require("../../middlewares/auth");
 const { HandleError, NOTFOUND, ERROR } = require("../../utils/error");
 const AppointmentModel = require("../../db/models/services/appointment");
+const UserModel = require("../../db/models/user");
 const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
 
@@ -119,29 +120,31 @@ router.post("/", check_for_access_token, allowUser, async (req, res) => {
   try {
     const is_batch_code_exists = req.body?.batch_code ? true : false;
 
-    const bookingConstrains = getBookingConstrains(req.body);
+    const user = await UserModel.findById(req.user.id);
+    if (!user) throw new NOTFOUND("User");
+    if (!user.is_profile_completed) throw new ERROR("Profile is not completed");
 
-    if (is_batch_code_exists) {
-      const ret = await AppointmentModel.findOneAndUpdate(
-        {
-          batch_code: req.body.batch_code,
-          booked: false,
-        },
-        {
-          booked: true,
-          patient: req.user.id,
-          booking_time: Date.now(),
-          ...bookingConstrains,
-        }
-      );
+    const bookingConstrains = getBookingConstrains(req.body, user);
 
-      if (!ret) {
-        throw new ERROR("Slots of appointment is full.", 400, {
-          free_slot: false,
-        });
+    if (!is_batch_code_exists) throw new NOTFOUND("batch_code");
+
+    const ret = await AppointmentModel.findOneAndUpdate(
+      {
+        batch_code: req.body.batch_code,
+        booked: false,
+      },
+      {
+        booked: true,
+        patient: req.user.id,
+        booking_time: Date.now(),
+        ...bookingConstrains,
       }
-    } else {
-      throw new NOTFOUND("batch_code");
+    );
+
+    if (!ret) {
+      throw new ERROR("Slots of appointment is full.", 400, {
+        free_slot: false,
+      });
     }
 
     return res.status(200).json({

@@ -84,11 +84,12 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
   try {
     const user = await UserModel.findById(req.user.id);
     if (!user) throw new NOTFOUND("user");
+    if (!user.is_profile_completed) throw new ERROR("Profile is not completed");
 
     const is_batch_code_exists = req.body?.batch_code ? true : false;
     if (!is_batch_code_exists) throw new NOTFOUND("batch_code");
 
-    const bookingConstrains = getBookingConstrains(req.body);
+    const bookingConstrains = getBookingConstrains(req.body, user);
 
     const ret = await VaccinationModel.findOneAndUpdate(
       { batch_code: req.body.batch_code, booked: false },
