@@ -13,6 +13,7 @@ const _completeUserProfileProps = [
   string_prop("district"),
   string_prop("city"),
   number_prop("mobile_no"),
+  string_prop("aadhar"),
 ];
 
 const _middleware_setupUserProfile = (req, res, next) => {

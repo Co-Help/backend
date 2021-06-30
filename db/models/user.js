@@ -8,6 +8,7 @@ const userSchema = Schema({
   dob: { type: SchemaTypes.Number, default: null },
   role: { type: SchemaTypes.String, default: "user" },
   is_profile_completed: { type: SchemaTypes.Boolean, default: false },
+  aadhar: { type: SchemaTypes.String, default: null, required: false },
   address: {
     pinCode: { type: SchemaTypes.Number },
     state: { type: SchemaTypes.String },

@@ -16,6 +16,7 @@ const oxygenSchema = Schema({
     name: { type: SchemaTypes.String },
     age: { type: SchemaTypes.Number },
     mobile_no: { type: SchemaTypes.Number },
+    aadhar: { type: SchemaTypes.String },
   },
 });
 

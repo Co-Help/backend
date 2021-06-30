@@ -1,6 +1,7 @@
 const router = require("express").Router();
 const { HandleError, INVALID, NOTFOUND } = require("../utils/error");
 const { _middleware_setupUserProfile } = require("../utils/validationProps");
+const utils = require("../utils/index");
 
 const UserModel = require("../db/models/user");
 const OrgModel = require("../db/models/org");
@@ -13,8 +14,10 @@ router.post(
   _middleware_setupUserProfile,
   async (req, res) => {
     try {
-      const { dob, pinCode, state, district, city, mobile_no, alt_no } =
+      const { dob, pinCode, state, district, city, mobile_no, alt_no, aadhar } =
         req.body;
+
+      if (!utils.aadhar.test(aadhar)) throw new INVALID("Aadhar");
 
       // Get the user
       let user = await UserModel.findById(req.user.id);
@@ -22,6 +25,7 @@ router.post(
 
       user.dob = dob;
       user.is_profile_completed = true;
+      user.aadhar = aadhar;
       user.address = {
         pinCode,
         state,
@@ -38,7 +42,6 @@ router.post(
         message: "Successful operation",
       });
     } catch (err) {
-      console.log("Hue hue hue");
       return HandleError(err, res);
     }
   }

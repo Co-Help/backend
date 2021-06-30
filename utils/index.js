@@ -1,4 +1,4 @@
-const { NOTFOUND } = require("./error");
+const { NOTFOUND, INVALID } = require("./error");
 
 const getBookingConstrains = (body, user) => {
   const self_booking =
@@ -16,6 +16,12 @@ const getBookingConstrains = (body, user) => {
     if (!body.mobile_no || typeof body.mobile_no != "number") {
       throw new NOTFOUND("Patient Age (mobile_no)");
     }
+
+    if (!body.aadhar || typeof body.aadhar != "string") {
+      throw new NOTFOUND("Aadhar No (aadhar)");
+    } else if (!aadhar.test(body.aadhar)) {
+      throw new INVALID("Aadhar");
+    }
   }
 
   let age = 0;
@@ -32,9 +38,12 @@ const getBookingConstrains = (body, user) => {
       name: self_booking ? user.name : body.name,
       age,
       mobile_no: self_booking ? user.contact.mobile_no : body.mobile_no,
+      aadhar: self_booking ? user.aadhar : body.aadhar,
     },
     self_booking,
   };
 };
 
-module.exports = { getBookingConstrains };
+const aadhar = /^[2-9]{1}[0-9]{3}\s{1}[0-9]{4}\s{1}[0-9]{4}$/;
+
+module.exports = { getBookingConstrains, aadhar };
