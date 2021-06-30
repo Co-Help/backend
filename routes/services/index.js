@@ -131,7 +131,7 @@ router.get("/search", check_for_access_token, async (req, res) => {
         .populate(orgContrains)
         .populate({
           path: "doctor",
-          select: ["name", "address", "doctor_info.active"],
+          select: ["name", "avatar", "email", "doctor_info.active"],
           match: { "doctor_info.active": { $eq: true } },
         });
       appointments = appointments.filter((item) => item.doctor !== null);

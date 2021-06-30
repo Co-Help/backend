@@ -22,7 +22,7 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
 
     const doctorConstraints = {
       path: "doctor",
-      select: ["name", "address", "doctor_info.active"],
+      select: ["name", "avatar", "email", "doctor_info.active"],
       match: { "doctor_info.active": { $eq: true } },
     };
 

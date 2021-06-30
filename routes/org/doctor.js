@@ -33,6 +33,7 @@ router.get("/", async (req, res) => {
       "-dob",
       "-is_profile_completed",
       "-contact.mobile_no",
+      "-aadhar",
     ];
 
     const searchConstrains = keywordsGiven
