@@ -1,6 +1,6 @@
 const { NOTFOUND } = require("./error");
 
-const getBookingConstrains = (body) => {
+const getBookingConstrains = (body, user) => {
   const self_booking =
     body.self_booking != undefined ? body.self_booking : true;
 
@@ -18,16 +18,23 @@ const getBookingConstrains = (body) => {
     }
   }
 
-  return !self_booking
-    ? {
-        patient_details: {
-          name: body.name,
-          age: body.age,
-          mobile_no: body.mobile_no,
-        },
-        self_booking: false,
-      }
-    : { self_booking: true };
+  let age = 0;
+  if (self_booking) {
+    const now = new Date().getFullYear();
+    const dob = new Date(user.dob).getFullYear();
+    age = now - dob;
+  } else {
+    age = body.age;
+  }
+
+  return {
+    patient_details: {
+      name: self_booking ? user.name : body.name,
+      age,
+      mobile_no: self_booking ? user.contact.mobile_no : body.mobile_no,
+    },
+    self_booking,
+  };
 };
 
 module.exports = { getBookingConstrains };
