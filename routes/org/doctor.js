@@ -34,6 +34,7 @@ router.get("/", async (req, res) => {
       "-is_profile_completed",
       "-contact.mobile_no",
       "-aadhar",
+      "-address",
     ];
 
     const searchConstrains = keywordsGiven
@@ -230,6 +231,34 @@ router.post(
       await doctor.save();
 
       return res.status(200).json({ message: "Successful operation" });
+    } catch (err) {
+      return HandleError(err, res);
+    }
+  }
+);
+
+router.post(
+  "/profile/setup",
+  check_for_access_token,
+  allowDoctor,
+  async (req, res) => {
+    try {
+      const user = await UserModel.findById(req.user.id);
+      if (!user) throw new NOTFOUND("User");
+
+      const qProvided = Array.isArray(req.body.qualifications) ? true : false;
+      const sProvided = Array.isArray(req.body.specialties) ? true : false;
+
+      user.doctor_info.qualifications = qProvided
+        ? req.body.qualifications
+        : user.doctor_info.qualifications;
+      user.doctor_info.specialties = sProvided
+        ? req.body.specialties
+        : user.doctor_info.specialties;
+
+      await user.save();
+
+      return res.status(200).json({ message: "Successful Operation" });
     } catch (err) {
       return HandleError(err, res);
     }

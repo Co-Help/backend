@@ -21,23 +21,10 @@ const userSchema = Schema({
   },
   doctor_info: {
     role: { type: SchemaTypes.String },
-    is_profile_completed: { type: SchemaTypes.Boolean, default: false },
     active: { type: SchemaTypes.Boolean, default: false },
     org: { type: SchemaTypes.ObjectId, ref: ORG_COLLECTION },
-    available: {
-      morning: {
-        from: SchemaTypes.Number,
-        to: SchemaTypes.Number,
-      },
-      afternoon: {
-        from: SchemaTypes.Number,
-        to: SchemaTypes.Number,
-      },
-      night: {
-        from: SchemaTypes.Number,
-        to: SchemaTypes.Number,
-      },
-    },
+    qualifications: [{ type: SchemaTypes.String, default: [] }],
+    specialties: [{ type: SchemaTypes.String, default: [] }],
   },
 });
 
