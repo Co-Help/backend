@@ -2,6 +2,8 @@ const router = require("express").Router();
 const { OAuth2Client } = require("google-auth-library");
 const { CLIENT_ID, ANDROID_CLIENT_ID } = process.env;
 const UserModel = require("../db/models/user");
+const ApplicationModel = require("../db/models/application");
+const OrgModel = require("../db/models/org");
 
 const { getAccessToken, getRefreshToken } = require("../manager/jwt");
 const TokenManager = require("../manager/tokenManager");
@@ -10,6 +12,7 @@ const {
   check_for_refresh_token,
   check_for_login_token,
 } = require("../middlewares/auth");
+const { ERROR } = require("../utils/error");
 
 const client = new OAuth2Client(CLIENT_ID);
 const android_client = new OAuth2Client(ANDROID_CLIENT_ID);
@@ -34,8 +37,25 @@ router.post("/login", async (req, res) => {
     });
 
     const { email_verified, email, name, picture } = ret.payload;
-
     if (!email_verified) throw Error("Email is Not Varified");
+
+    // Checking if user applied for Application
+    const applied_for_org = await ApplicationModel.exists({
+      "admin.email": email,
+    });
+    const already_org = await OrgModel.findOne({
+      $or: [{ admin: email }, { members: { $in: [email] } }],
+    });
+
+    if (applied_for_org && !already_org) {
+      throw new ERROR("User applied for ORG.", { application: true });
+    }
+
+    const member_detected = already_org
+      ? already_org.members.find((item) => {
+          return item === email;
+        })
+      : false;
 
     const user = await UserModel.findOne({ email });
 
@@ -46,6 +66,7 @@ router.post("/login", async (req, res) => {
         name,
         email,
         avatar: picture,
+        role: member_detected ? "org" : "user",
       }).save();
     } else {
       tokenUser = user;

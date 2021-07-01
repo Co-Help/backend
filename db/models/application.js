@@ -7,6 +7,11 @@ const applicationSchema = Schema({
   helpline_no: SchemaTypes.Number,
   user: { type: SchemaTypes.ObjectId, ref: USER_COLLECTION },
   status: { type: SchemaTypes.String, default: "pending" },
+  admin: {
+    name: { type: SchemaTypes.String, required: true },
+    email: { type: SchemaTypes.String, required: true },
+    avatar: { type: SchemaTypes.String, required: true },
+  },
   address: {
     pinCode: { type: SchemaTypes.Number, required: true },
     state: { type: SchemaTypes.String, required: true },

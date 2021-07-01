@@ -14,6 +14,12 @@ const OrgModel = require("../../db/models/org");
 const { HandleError, NOTFOUND, EXISTS, ERROR } = require("../../utils/error");
 const { pushNotification } = require("../../utils/notification");
 
+const { OAuth2Client } = require("google-auth-library");
+const { CLIENT_ID } = process.env;
+const { v4 } = require("uuid");
+
+const client = new OAuth2Client(CLIENT_ID);
+
 const router = require("express").Router();
 
 router.get("/", check_for_access_token, allowUser, async (req, res) => {
@@ -52,41 +58,91 @@ router.delete("/", check_for_access_token, allowUser, async (req, res) => {
   }
 });
 
-router.get(
-  "/can_apply",
-  check_for_access_token,
-  allowUser,
-  async (req, res) => {
-    try {
-      if (await ApplicationModel.exists({ user: req.user.id })) {
-        throw new EXISTS("Previous application");
-      }
-      return res.status(200).json({ message: "You can apply for org" });
-    } catch (err) {
-      return HandleError(err, res);
+router.get("/can_apply", async (req, res) => {
+  try {
+    const email_provided = req.query.email != undefined ? true : false;
+    if (!email_provided) throw new NOTFOUND("Email");
+
+    const email = req.query.email.toLowerCase();
+
+    if (await UserModel.exists({ email })) {
+      throw new ERROR(
+        "User account already exists. Delete account then apply."
+      );
     }
+
+    if (
+      await OrgModel.exists({
+        $or: [{ admin: email }, { members: { $in: [email] } }],
+      })
+    ) {
+      throw new ERROR("You are already under an organization.");
+    }
+
+    if (await ApplicationModel.exists({ "admin.email": email })) {
+      throw new EXISTS("Previous application");
+    }
+    return res.status(200).json({ message: "You can apply for org" });
+  } catch (err) {
+    return HandleError(err, res);
   }
-);
+});
 
-router.post(
-  "/apply",
-  check_for_access_token,
-  allowUser,
-  _middleware_applyForOrg,
-  async (req, res) => {
-    try {
-      if (await ApplicationModel.exists({ user: req.user.id })) {
-        throw new EXISTS("Previous application");
-      }
+router.post("/apply", _middleware_applyForOrg, async (req, res) => {
+  try {
+    const ret = await client.verifyIdToken({
+      idToken: req.body.idToken,
+      audience: CLIENT_ID,
+    });
 
-      const {
-        name,
-        logo_url,
-        helpline_no,
+    const { email_verified, email, picture } = ret.payload;
+    if (!email_verified) throw Error("Email is Not Varified");
+
+    if (await ApplicationModel.exists({ "admin.email": email })) {
+      throw new EXISTS("Previous application");
+    }
+
+    if (await UserModel.exists({ email })) {
+      throw new ERROR("User already exists. Delete the User Account first.", {
+        user_acc: true,
+      });
+    }
+
+    const {
+      name,
+      logo_url,
+      helpline_no,
+      pinCode,
+      state,
+      district,
+      city,
+      vaccination,
+      blood_test,
+      blood_provide,
+      oxygen_provide,
+      bed_provide,
+      doctor_appointment,
+      emergency_provide,
+      info,
+    } = req.body;
+
+    const application = new ApplicationModel({
+      name,
+      logo_url,
+      helpline_no,
+      user: null,
+      admin: {
+        name: ret.payload.name,
+        email,
+        avatar: picture,
+      },
+      address: {
         pinCode,
         state,
         district,
         city,
+      },
+      services: {
         vaccination,
         blood_test,
         blood_provide,
@@ -94,39 +150,16 @@ router.post(
         bed_provide,
         doctor_appointment,
         emergency_provide,
-        info,
-      } = req.body;
+      },
+      info,
+    });
+    await application.save();
 
-      const application = new ApplicationModel({
-        name,
-        logo_url,
-        helpline_no,
-        user: req.user.id,
-        address: {
-          pinCode,
-          state,
-          district,
-          city,
-        },
-        services: {
-          vaccination,
-          blood_test,
-          blood_provide,
-          oxygen_provide,
-          bed_provide,
-          doctor_appointment,
-          emergency_provide,
-        },
-        info,
-      });
-      await application.save();
-
-      return res.status(200).json({ message: "Successful Operation" });
-    } catch (err) {
-      return HandleError(err, res);
-    }
+    return res.status(200).json({ message: "Successful Operation" });
+  } catch (err) {
+    return HandleError(err, res);
   }
-);
+});
 
 // Admin Routes
 router.get(
@@ -158,39 +191,43 @@ router.post(
     try {
       const { id } = req.body;
 
-      const user = await UserModel.findById(id);
-      if (!user) {
-        throw new NOTFOUND("User");
+      const application = await ApplicationModel.findById(id);
+      if (!application) throw new NOTFOUND("Application");
+
+      const org = await OrgModel.findOne({
+        $or: [
+          { admin: application.admin.email },
+          { members: { $in: [application.admin.email] } },
+        ],
+      });
+      if (org) {
+        throw new ERROR("User is already a org admin or Member");
       }
 
-      const application = await ApplicationModel.findOne({ user: id });
-      if (!application) {
-        throw new NOTFOUND("Application");
+      const user = await UserModel.findOne({ email: application.admin.email });
+      if (user) {
+        throw new EXISTS("User");
       }
 
       if (application.status === "approved") {
         throw new ERROR("Request is already approved");
       }
 
-      if (await OrgModel.exists({ user: id })) {
-        application.status = "rejected";
-        await application.save();
-        await pushNotification(
-          "CoHelp Application Verification Team",
-          "Unfortunately your application is being rejected because your account is already org mode.\
-          Please ReLogin your account to use ORG features.",
-          id
-        );
-        throw new EXISTS("Application already");
-      }
+      const newUser = await new UserModel({
+        name: application.admin.name,
+        email: application.admin.email,
+        avatar: application.admin.avatar,
+        role: "org",
+      }).save();
 
-      const org = new OrgModel({
+      const newOrg = new OrgModel({
         name: application.name,
         logo_url: application.logo_url,
         info: application.info,
         helpline_no: application.helpline_no,
-        user: id,
-        pass_key: "dummy",
+        user: newUser._id,
+        admin: newUser.email,
+        pass_key: v4(),
         address: {
           pinCode: application.address.pinCode,
           state: application.address.state,
@@ -207,16 +244,14 @@ router.post(
           emergency_provide: application.services.emergency_provide,
         },
       });
-      await org.save();
+      await newOrg.save();
       application.status = "approved";
       await application.save();
-      user.role = "org";
-      await user.save();
       await pushNotification(
         "CoHelp Application Verification Team",
         "Your application for transfer your account from user to org\
-        is successfully approved. Please ReLogin your account to use ORG features.",
-        id
+        is successfully approved.",
+        newUser._id
       );
       return res.status(200).json({ message: "Successful Operation" });
     } catch (err) {

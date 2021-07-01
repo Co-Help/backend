@@ -39,6 +39,7 @@ const _applyForOrg = [
   boolean_prop("doctor_appointment"),
   boolean_prop("emergency_provide"),
   string_prop("info"),
+  string_prop("idToken"),
 ];
 
 const _middleware_applyForOrg = (req, res, next) => {

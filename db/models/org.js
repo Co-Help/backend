@@ -27,6 +27,8 @@ const orgSchema = Schema({
     doctor_appointment: { type: SchemaTypes.Boolean, default: false },
     emergency_provide: { type: SchemaTypes.Boolean, default: false },
   },
+  admin: { type: SchemaTypes.String, required: true },
+  members: [{ type: SchemaTypes.String, default: [] }],
   doctors: [{ type: SchemaTypes.ObjectId, ref: USER_COLLECTION }],
 });
 
