@@ -1,6 +1,6 @@
 const { NOTFOUND, INVALID } = require("./error");
 
-const getBookingConstrains = (body, user) => {
+const getBookingConstrains = (body, user, useAadhar = false) => {
   const self_booking =
     body.self_booking != undefined ? body.self_booking : true;
 
@@ -17,10 +17,12 @@ const getBookingConstrains = (body, user) => {
       throw new NOTFOUND("Patient Age (mobile_no)");
     }
 
-    if (!body.aadhar || typeof body.aadhar != "string") {
-      throw new NOTFOUND("Aadhar No (aadhar)");
-    } else if (!aadhar.test(body.aadhar)) {
-      throw new INVALID("Aadhar");
+    if (useAadhar) {
+      if (!body.aadhar || typeof body.aadhar != "string") {
+        throw new NOTFOUND("Aadhar No (aadhar)");
+      } else if (!aadhar.test(body.aadhar)) {
+        throw new INVALID("Aadhar");
+      }
     }
   }
 
@@ -38,7 +40,7 @@ const getBookingConstrains = (body, user) => {
       name: self_booking ? user.name : body.name,
       age,
       mobile_no: self_booking ? user.contact.mobile_no : body.mobile_no,
-      aadhar: self_booking ? user.aadhar : body.aadhar,
+      aadhar: useAadhar ? (self_booking ? user.aadhar : body.aadhar) : null,
     },
     self_booking,
   };

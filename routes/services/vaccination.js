@@ -89,7 +89,7 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
     const is_batch_code_exists = req.body?.batch_code ? true : false;
     if (!is_batch_code_exists) throw new NOTFOUND("batch_code");
 
-    const bookingConstrains = getBookingConstrains(req.body, user);
+    const bookingConstrains = getBookingConstrains(req.body, user, true);
 
     const ret = await VaccinationModel.findOneAndUpdate(
       { batch_code: req.body.batch_code, booked: false },
