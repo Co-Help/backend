@@ -126,6 +126,61 @@ router.post("/member", check_for_access_token, allowOrg, async (req, res) => {
   }
 });
 
+router.delete("/member", check_for_access_token, allowOrg, async (req, res) => {
+  try {
+    const email_provided = req.body.email !== undefined ? true : false;
+    if (!email_provided) throw new NOTFOUND("email");
+
+    const email = req.body.email.toLowerCase();
+
+    if (!utils.email.test(email)) throw new INVALID("email");
+
+    // Checking if user is org admin or not
+    const orgAdmin = await OrgModel.findOneAndUpdate(
+      { user: req.user.id, members: { $in: [email] } },
+      {
+        $pull: {
+          members: email,
+        },
+      }
+    );
+    if (!orgAdmin) throw new NOTFOUND("Org");
+
+    await UserModel.deleteOne({ email });
+
+    return res.status(200).json({ message: "Successful Operation" });
+  } catch (err) {
+    return HandleError(err, res);
+  }
+});
+
+router.get("/info", check_for_access_token, allowOrg, async (req, res) => {
+  try {
+    const org = await OrgModel.findOne({
+      $or: [{ admin: req.user.email }, { members: { $in: [req.user.email] } }],
+    }).populate({
+      path: "doctors",
+    });
+    if (!org) throw new NOTFOUND("Org");
+
+    const members = await UserModel.find({
+      $or: [
+        ...org.members.map((item) => {
+          return { email: item };
+        }),
+        { email: org.admin },
+      ],
+    }).select(["-doctor_info"]);
+
+    let orgN = org.toJSON();
+    orgN.members = members;
+
+    return res.status(200).json({ message: "Successful Operation", org: orgN });
+  } catch (err) {
+    return HandleError(err, res);
+  }
+});
+
 router.use("/emergency", require("./emergency"));
 router.use("/blood_test", require("./bloodTest"));
 router.use("/blood_provide", require("./bloodProvide"));
