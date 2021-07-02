@@ -4,9 +4,12 @@ const {
   allowOrg,
   allowUser,
 } = require("../../middlewares/auth");
-const { NOTFOUND, HandleError } = require("../../utils/error");
+const { NOTFOUND, HandleError, ERROR, INVALID } = require("../../utils/error");
 const OrgModel = require("../../db/models/org");
+const UserModel = require("../../db/models/user");
+const ApplicationModel = require("../../db/models/application");
 const { v4 } = require("uuid");
+const utils = require("../../utils/index");
 
 router.get(
   "/generate_pass_key",
@@ -74,6 +77,50 @@ router.get("/", check_for_access_token, allowUser, async (req, res) => {
       message: "Successful operation",
       appointments: orgs,
     });
+  } catch (err) {
+    return HandleError(err, res);
+  }
+});
+
+// Add Member
+router.post("/member", check_for_access_token, allowOrg, async (req, res) => {
+  try {
+    const email_provided = req.body.email !== undefined ? true : false;
+    if (!email_provided) throw new NOTFOUND("email");
+
+    const email = req.body.email.toLowerCase();
+
+    if (!utils.email.test(email)) throw new INVALID("email");
+
+    // Checking if user is org admin or not
+    const orgAdmin = await OrgModel.findOne({ user: req.user.id });
+    if (!orgAdmin) throw new NOTFOUND("Org");
+
+    // Checking if email already applied for org
+    const eApplicationExists = await ApplicationModel.findOne({
+      "admin.email": email,
+    });
+    if (eApplicationExists)
+      throw new ERROR("Provided email already applied for ORG");
+
+    // Checking if provided email already a member of org or not
+    const eOrgExists = await OrgModel.exists({
+      $or: [{ admin: email }, { members: { $in: [email] } }],
+    });
+    if (eOrgExists)
+      throw new ERROR("This email already under an organization.");
+
+    // Checking if Email have any user account
+    const eUserExists = await UserModel.exists({ email });
+    if (eUserExists)
+      throw new ERROR(
+        "User account already exists. Delete account then apply."
+      );
+
+    orgAdmin.members.push(email);
+    await orgAdmin.save();
+
+    return res.status(200).json({ message: "Successful Operation" });
   } catch (err) {
     return HandleError(err, res);
   }
