@@ -8,7 +8,9 @@ const ServiceModel = require("../../db/models/services/bloodProvide");
 
 router.get("/", check_for_access_token, allowOrg, async (req, res) => {
   try {
-    const org = await OrgModel.findOne({ user: req.user.id });
+    const org = await OrgModel.findOne({
+      $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+    });
     if (!org) throw new NOTFOUND("Org");
 
     const services = await ServiceModel.find({ org });
@@ -32,7 +34,9 @@ router.post(
       const user = await UserModel.exists({ _id: req.user.id });
       if (!user) throw new NOTFOUND("Org User");
 
-      const org = await OrgModel.findOne({ user: req.user.id });
+      const org = await OrgModel.findOne({
+        $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+      });
       if (!org) throw new NOTFOUND("Org");
 
       if (!org.services.blood_provide) {
@@ -68,7 +72,9 @@ router.post("/edit", check_for_access_token, allowOrg, async (req, res) => {
     const user = await UserModel.exists({ _id: req.user.id });
     if (!user) throw new NOTFOUND("Org User");
 
-    const org = await OrgModel.findOne({ user: req.user.id });
+    const org = await OrgModel.findOne({
+      $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+    });
     if (!org) throw new NOTFOUND("Org");
 
     const { id, cost, group, available, info } = req.body;
@@ -97,7 +103,9 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
     const user = await UserModel.exists({ _id: req.user.id });
     if (!user) throw new NOTFOUND("Org User");
 
-    const org = await OrgModel.findOne({ user: req.user.id });
+    const org = await OrgModel.findOne({
+      $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+    });
     if (!org) throw new NOTFOUND("Org");
 
     const id_given = req.body?.id ? true : false;

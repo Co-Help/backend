@@ -12,7 +12,9 @@ const ConfigModel = require("../../db/models/config");
 
 router.get("/", check_for_access_token, allowOrg, async (req, res) => {
   try {
-    const org = await OrgModel.findOne({ user: req.user.id });
+    const org = await OrgModel.findOne({
+      $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+    });
     if (!org) throw new NOTFOUND("Org");
 
     const services = await ServiceModel.find({ org });
@@ -52,7 +54,9 @@ router.get(
   allowOrg,
   async (req, res) => {
     try {
-      const org = await OrgModel.findOne({ user: req.user.id });
+      const org = await OrgModel.findOne({
+        $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+      });
       if (!org) throw new NOTFOUND("Org");
 
       const batch_code = req.query?.batch_code ? true : false;
@@ -75,7 +79,9 @@ router.get(
 
 router.get("/by_id", check_for_access_token, allowOrg, async (req, res) => {
   try {
-    const org = await OrgModel.exists({ user: req.user.id });
+    const org = await OrgModel.exists({
+      $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+    });
     if (!org) throw new NOTFOUND("Org");
 
     const id_exists = req.query?.id ? true : false;
@@ -102,7 +108,9 @@ router.post(
       const user = await UserModel.exists({ _id: req.user.id });
       if (!user) throw new NOTFOUND("Org User");
 
-      const org = await OrgModel.findOne({ user: req.user.id });
+      const org = await OrgModel.findOne({
+        $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+      });
       if (!org) throw new NOTFOUND("Org");
 
       if (!org.services.oxygen_provide) {
@@ -150,7 +158,9 @@ router.post("/add", check_for_access_token, allowOrg, async (req, res) => {
     const user = await UserModel.exists({ _id: req.user.id });
     if (!user) throw new NOTFOUND("Org User");
 
-    const org = await OrgModel.findOne({ user: req.user.id });
+    const org = await OrgModel.findOne({
+      $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+    });
     if (!org) throw new NOTFOUND("Org");
 
     const { quantity, batch_code } = req.body;
@@ -184,7 +194,9 @@ router.post(
       const user = await UserModel.exists({ _id: req.user.id });
       if (!user) throw new NOTFOUND("Org User");
 
-      const org = await OrgModel.findOne({ user: req.user.id });
+      const org = await OrgModel.findOne({
+        $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+      });
       if (!org) throw new NOTFOUND("Org");
 
       const { cost, capacity, info, batch_code } = req.body;
@@ -217,7 +229,9 @@ router.post("/done", check_for_access_token, allowOrg, async (req, res) => {
     const user = await UserModel.exists({ _id: req.user.id });
     if (!user) throw new NOTFOUND("Org User");
 
-    const org = await OrgModel.findOne({ user: req.user.id });
+    const org = await OrgModel.findOne({
+      $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+    });
     if (!org) throw new NOTFOUND("Org");
 
     const idProvided = req.body?.id ? true : false;
@@ -242,7 +256,9 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
     const user = await UserModel.exists({ _id: req.user.id });
     if (!user) throw new NOTFOUND("Org User");
 
-    const org = await OrgModel.findOne({ user: req.user.id });
+    const org = await OrgModel.findOne({
+      $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+    });
     if (!org) throw new NOTFOUND("Org");
 
     const id_given = req.body?.id ? true : false;

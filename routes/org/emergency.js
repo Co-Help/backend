@@ -8,7 +8,9 @@ const OrgModel = require("../../db/models/org");
 
 router.get("/", check_for_access_token, allowOrg, async (req, res) => {
   try {
-    const org = await OrgModel.findOne({ user: req.user.id });
+    const org = await OrgModel.findOne({
+      $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+    });
     if (!org) throw new NOTFOUND("Org");
 
     const emergencies = await EmergencyModel.find({ org });
@@ -32,7 +34,9 @@ router.post(
       const user = await UserModel.findById(req.user.id);
       if (!user) throw new NOTFOUND("Org User");
 
-      const org = await OrgModel.findOne({ user: req.user.id });
+      const org = await OrgModel.findOne({
+        $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+      });
       if (!org) throw new NOTFOUND("Org");
 
       if (!org.services.emergency_provide) {
@@ -69,7 +73,9 @@ router.put("/", check_for_access_token, allowOrg, async (req, res) => {
     const user = await UserModel.findById(req.user.id);
     if (!user) throw new NOTFOUND("Org User");
 
-    const org = await OrgModel.findOne({ user: req.user.id });
+    const org = await OrgModel.findOne({
+      $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+    });
     if (!org) throw new NOTFOUND("Org");
 
     const is_given_id = req.body?.id ? true : false;
@@ -100,7 +106,9 @@ router.delete("/", check_for_access_token, allowOrg, async (req, res) => {
     const user = await UserModel.findById(req.user.id);
     if (!user) throw new NOTFOUND("Org User");
 
-    const org = await OrgModel.findOne({ user });
+    const org = await OrgModel.findOne({
+      $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+    });
     if (!org) throw new NOTFOUND("Org");
 
     const { id } = req.body;

@@ -100,7 +100,9 @@ router.post(
         throw new ERROR("Current User already have different role");
       }
 
-      const org = await OrgModel.findOne({ user: req.user.id });
+      const org = await OrgModel.findOne({
+        $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+      });
       if (!org) throw new INVALID("Org");
 
       if (!org.services.doctor_appointment) {

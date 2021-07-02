@@ -17,7 +17,9 @@ router.get(
   allowOrg,
   async (req, res) => {
     try {
-      const org = await OrgModel.findOne({ user: req.user.id });
+      const org = await OrgModel.findOne({
+        $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+      });
       if (!org) throw new NOTFOUND("Org");
 
       org.pass_key = v4();

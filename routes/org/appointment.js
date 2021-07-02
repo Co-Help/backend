@@ -18,7 +18,12 @@ router.get("/", check_for_access_token, allowDoctorOrg, async (req, res) => {
   try {
     const orgfilter =
       req.user.role === "org"
-        ? { user: req.user.id }
+        ? {
+            $or: [
+              { user: req.user.id },
+              { members: { $in: [req.user.email] } },
+            ],
+          }
         : { doctors: { $in: [req.user.id] } };
     const org = await OrgModel.findOne(orgfilter);
     if (!org) throw new NOTFOUND("Org");
@@ -66,7 +71,12 @@ router.get(
     try {
       const orgfilter =
         req.user.role === "org"
-          ? { user: req.user.id }
+          ? {
+              $or: [
+                { user: req.user.id },
+                { members: { $in: [req.user.email] } },
+              ],
+            }
           : { doctors: { $in: [req.user.id] } };
       const org = await OrgModel.findOne(orgfilter);
       if (!org) throw new NOTFOUND("Org");
@@ -101,7 +111,12 @@ router.get(
     try {
       const orgfilter =
         req.user.role === "org"
-          ? { user: req.user.id }
+          ? {
+              $or: [
+                { user: req.user.id },
+                { members: { $in: [req.user.email] } },
+              ],
+            }
           : { doctors: { $in: [req.user.id] } };
       const org = await OrgModel.findOne(orgfilter);
       if (!org) throw new NOTFOUND("Org");
