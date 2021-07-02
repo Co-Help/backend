@@ -7,11 +7,18 @@ const {
   _middleware_applyForOrg,
   _approveApplication,
 } = require("../../utils/validationProps");
+const utils = require("../../utils/index");
 
 const ApplicationModel = require("../../db/models/application");
 const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
-const { HandleError, NOTFOUND, EXISTS, ERROR } = require("../../utils/error");
+const {
+  HandleError,
+  NOTFOUND,
+  EXISTS,
+  ERROR,
+  INVALID,
+} = require("../../utils/error");
 const { pushNotification } = require("../../utils/notification");
 
 const { OAuth2Client } = require("google-auth-library");
@@ -64,6 +71,7 @@ router.get("/can_apply", async (req, res) => {
     if (!email_provided) throw new NOTFOUND("Email");
 
     const email = req.query.email.toLowerCase();
+    if (!utils.email.test(email)) throw new INVALID("email");
 
     if (await UserModel.exists({ email })) {
       throw new ERROR(
