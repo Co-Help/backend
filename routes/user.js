@@ -54,7 +54,9 @@ router.get("/profile", check_for_access_token, async (req, res) => {
     if (!user) throw new NOTFOUND("user");
 
     if (user.role === "org") {
-      org = await OrgModel.findOne({ user }).populate("doctors");
+      org = await OrgModel.findOne({
+        $or: [{ user: req.user.id }, { members: { $in: [req.user.email] } }],
+      }).populate("doctors");
     }
 
     return res.status(200).json({
