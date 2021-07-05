@@ -33,26 +33,34 @@ function GET_HTML(
   heading = "",
   failed = false,
   message = "",
-  patient_details = {}
+  patient_details = null
 ) {
   return `
       <div class="container" style="margin: 0; boxsizing: border-box; padding: 4%; font-family: 'Poppins', sans-serif;"> 
           <p class="heading" style="padding: 0; margin: 0; boxsizing: border-box; font-size: 2rem; font-weight: 700; ${
             failed ? "color: #ff4141;" : "color: #1A69E0;"
           }">${heading}</p>
-          <p class="info" style="padding: 0; margin: 0; boxsizing: border-box; margin-top: 1rem; max-width: 35rem; line-height: 1.8rem; color: #000;">${message}</p>
-    
+          <p class="info" style="padding: 0; margin: 0; boxsizing: border-box; margin-top: 1rem; max-width: 35rem; line-height: 1.8rem; color: #000;">
+            ${message.replace(new RegExp("\n", "g"), "<br>")}
+          </p>
+          
+          ${
+            patient_details !== null
+              ? `
           <div class="details" style="padding: 0; margin: 0; boxsizing: border-box; margin-top: 4rem;"> 
               <p class="title" style="padding: 0; margin: 0; boxsizing: border-box; font-weight: 800; text-transform: uppercase; letter-spacing: .05rem; color: #1A69E0;">Patient Details</p>
               <div class="flex" style="padding: 0; margin: 0; boxsizing: border-box; width: 100%; display: flex;">
                   ${genarate_details(patient_details)}
               </div>
           </div>
-          
-          <p class="end-info" style="padding: 0; margin: 0; boxsizing: border-box; max-width: 300px; font-weight: 500; font-size: 1rem; line-height: 1.6rem; letter-spacing: 0.03em; color: #46494D; margin-top: 5rem;">
+          `
+              : ""
+          }
+
+          <p class="end-info" style="padding: 0; margin: 0; boxsizing: border-box; max-width: 300px; font-weight: 500; font-size: .9rem; line-height: 1.6rem; letter-spacing: 0.03em; color: #46494D; margin-top: 5rem;">
               You received this because you're a registered CoHelp user.
           </p>
-          <div style="padding: 0; margin: 0; boxsizing: border-box; height: 3rem;"></div>
+          <div style="padding: 0; margin: 0; boxsizing: border-box; height: 2rem;"></div>
           <p class="logo-title" style="padding: 0; margin: 0; boxsizing: border-box; font-weight: 600; color: #494C51; font-size: 1.5rem; letter-spacing: 0.03em;">CoHelp</p>
           <p class="logo-details" style="padding: 0; margin: 0; boxsizing: border-box; font-size: .9rem; letter-spacing: 0.03em; color: #72777E; font-weight: 500;">Online Covid Help System</p>
       </div>
