@@ -13,6 +13,7 @@ const { pushNotification } = require("../../utils/notification");
 const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
 const AppointmentModel = require("../../db/models/services/appointment");
+const { GET_HTML, bold } = require("../../utils/template");
 
 router.get("/", async (req, res) => {
   try {
@@ -115,9 +116,19 @@ router.post(
 
       await sendMail(
         user.email,
-        `Invitation to the ${org.name}`,
-        `You are invited as Doctor in ${org.name} Oranganisation. Copy the invitation code and join into the org from doctor panel.\n\nInvitation code - ${org.pass_key}`
+        `${org.name} Team`,
+        "",
+        GET_HTML(
+          "Doctor Invitation",
+          false,
+          `You are invited as Doctor in ${bold(
+            org.name
+          )}.\nCopy the invitation code and join into the org from doctor panel.\n
+        Invitation code : ${bold(org.pass_key)}\n
+        ${bold("Note : ")}Do not share this key to anyone.`
+        )
       );
+
       await pushNotification(
         `${org.name} - Invitation`,
         `You are invited as Doctor in ${org.name} Oranganisation. Check your email for more info.`,
