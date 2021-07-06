@@ -12,7 +12,7 @@ const sendMail = async (email, subject, content, html = "") => {
   });
 
   return await transporter.sendMail({
-    from: process.env.MAIL_USERNAME,
+    from: `"CoHelp" <${process.env.MAIL_USERNAME}>`,
     to: email,
     subject,
     text: content,
