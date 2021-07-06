@@ -8,8 +8,10 @@ const UserModel = require("../../db/models/user");
 const VaccinationModel = require("../../db/models/services/vaccination");
 const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
-const { sendMail } = require("../../utils/email");
 const { GET_HTML, bold } = require("../../utils/template");
+
+const EMAIL_JOB = require("../../worker/email");
+EMAIL_JOB.start();
 
 router.get("/", check_for_access_token, allowAll, async (req, res) => {
   try {
@@ -104,11 +106,11 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
     ).populate("org");
     if (!ret) throw new ERROR("Error Ocurred", 500, { err: ret });
 
-    await sendMail(
-      req.user.email,
-      "CoHelp Vaccination Services",
-      "",
-      GET_HTML(
+    EMAIL_JOB.push_email({
+      email: req.user.email,
+      subject: "CoHelp Vaccination Services",
+      content: "",
+      html: GET_HTML(
         "Successfully Booked",
         false,
         `You successfully booked your vaccine from ${bold(
@@ -132,8 +134,8 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
           Mobile: bookingConstrains.patient_details.mobile_no,
           Aadhar: bookingConstrains.patient_details.aadhar,
         }
-      )
-    );
+      ),
+    });
 
     return res.status(200).json({ message: "Successful operation" });
   } catch (err) {
@@ -204,11 +206,11 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
     if (!ret)
       throw new ERROR("Booked record not found or its already finished");
 
-    await sendMail(
-      req.user.email,
-      "CoHelp Vaccination Services",
-      "",
-      GET_HTML(
+    EMAIL_JOB.push_email({
+      email: req.user.email,
+      subject: "CoHelp Vaccination Services",
+      content: "",
+      html: GET_HTML(
         "Booking Cancelled",
         false,
         `Your vaccination booking cancelled which is booked from ${bold(
@@ -216,8 +218,8 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
         )} for ${bold(patient_name)}.\n\nFor any query our helpline no. ${bold(
           record.org.helpline_no
         )}`
-      )
-    );
+      ),
+    });
 
     return res.status(200).json({ message: "Successful operation" });
   } catch (err) {

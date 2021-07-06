@@ -8,8 +8,10 @@ const UserModel = require("../../db/models/user");
 const BloodTestModel = require("../../db/models/services/bloodTest");
 const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
-const { sendMail } = require("../../utils/email");
 const { GET_HTML, bold } = require("../../utils/template");
+
+const EMAIL_JOB = require("../../worker/email");
+EMAIL_JOB.start();
 
 router.get("/", check_for_access_token, allowAll, async (req, res) => {
   try {
@@ -98,11 +100,11 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
     ).populate("org");
     if (!ret) throw new ERROR("Error Ocurred", 500, { err: ret });
 
-    await sendMail(
-      req.user.email,
-      "CoHelp Blood Test Services",
-      "",
-      GET_HTML(
+    EMAIL_JOB.push_email({
+      email: req.user.email,
+      subject: "CoHelp Blood Test Services",
+      content: "",
+      html: GET_HTML(
         "Successfully Booked",
         false,
         `You successfully booked your blood test from ${bold(
@@ -123,8 +125,8 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
           Age: bookingConstrains.patient_details.age,
           Mobile: bookingConstrains.patient_details.mobile_no,
         }
-      )
-    );
+      ),
+    });
 
     return res.status(200).json({ message: "Successful operation" });
   } catch (err) {
@@ -184,11 +186,11 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
     record.info = config.info;
     await record.save();
 
-    await sendMail(
-      req.user.email,
-      "CoHelp Blood Test Services",
-      "",
-      GET_HTML(
+    EMAIL_JOB.push_email({
+      email: req.user.email,
+      subject: "CoHelp Blood Test Services",
+      content: "",
+      html: GET_HTML(
         "Booking Cancelled",
         false,
         `Your blood test booking cancelled which is booked from ${bold(
@@ -196,8 +198,8 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
         )} for ${bold(patient_name)}.\n\nFor any query our helpline no. ${bold(
           record.org.helpline_no
         )}`
-      )
-    );
+      ),
+    });
 
     return res.status(200).json({ message: "Successful operation" });
   } catch (err) {

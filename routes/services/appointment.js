@@ -5,8 +5,10 @@ const AppointmentModel = require("../../db/models/services/appointment");
 const UserModel = require("../../db/models/user");
 const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
-const { sendMail } = require("../../utils/email");
 const { GET_HTML, bold } = require("../../utils/template");
+
+const EMAIL_JOB = require("../../worker/email");
+EMAIL_JOB.start();
 
 router.get("/", check_for_access_token, allowUser, async (req, res) => {
   try {
@@ -149,11 +151,11 @@ router.post("/", check_for_access_token, allowUser, async (req, res) => {
       });
     }
 
-    await sendMail(
-      req.user.email,
-      "CoHelp Appointment Services",
-      "",
-      GET_HTML(
+    EMAIL_JOB.push_email({
+      email: req.user.email,
+      subject: "CoHelp Appointment Services",
+      content: "",
+      html: GET_HTML(
         "Appointment Booked",
         false,
         `You successfully booked your appointment from ${bold(
@@ -168,8 +170,8 @@ router.post("/", check_for_access_token, allowUser, async (req, res) => {
           Age: bookingConstrains.patient_details.age,
           Mobile: bookingConstrains.patient_details.mobile_no,
         }
-      )
-    );
+      ),
+    });
 
     return res.status(200).json({
       message: "Successful operation",
@@ -222,11 +224,11 @@ router.post("/cancel", check_for_access_token, allowUser, async (req, res) => {
     record.info = config.info;
     await record.save();
 
-    await sendMail(
-      req.user.email,
-      "CoHelp Appointment Services",
-      "",
-      GET_HTML(
+    EMAIL_JOB.push_email({
+      email: req.user.email,
+      subject: "CoHelp Appointment Services",
+      content: "",
+      html: GET_HTML(
         "Booking Cancelled",
         false,
         `Your Appointment booking cancelled which is booked from ${bold(
@@ -234,8 +236,8 @@ router.post("/cancel", check_for_access_token, allowUser, async (req, res) => {
         )} for ${bold(patient_name)}.\n\nFor any query our helpline no. ${bold(
           record.org.helpline_no
         )}`
-      )
-    );
+      ),
+    });
 
     return res.status(200).json({
       message: "Successful operation",

@@ -8,8 +8,10 @@ const UserModel = require("../../db/models/user");
 const ServiceModel = require("../../db/models/services/oxygenProvide");
 const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
-const { sendMail } = require("../../utils/email");
 const { GET_HTML, bold } = require("../../utils/template");
+
+const EMAIL_JOB = require("../../worker/email");
+EMAIL_JOB.start();
 
 router.get("/", check_for_access_token, allowAll, async (req, res) => {
   try {
@@ -121,11 +123,11 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
       }
     }
 
-    await sendMail(
-      req.user.email,
-      "CoHelp Oxygen Services",
-      "",
-      GET_HTML(
+    EMAIL_JOB.push_email({
+      email: req.user.email,
+      subject: "CoHelp Oxygen Services",
+      content: "",
+      html: GET_HTML(
         "Oxygen Booked",
         false,
         `You successfully booked oxygen from ${bold(
@@ -136,8 +138,8 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
           Age: bookingConstrains.patient_details.age,
           Mobile: bookingConstrains.patient_details.mobile_no,
         }
-      )
-    );
+      ),
+    });
 
     return res.status(200).json({ message: "Successful operation" });
   } catch (err) {
@@ -251,11 +253,11 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
     if (!ret)
       throw new ERROR("Booked record not found or its already finished");
 
-    await sendMail(
-      req.user.email,
-      "CoHelp Oxygen Services",
-      "",
-      GET_HTML(
+    EMAIL_JOB.push_email({
+      email: req.user.email,
+      subject: "CoHelp Oxygen Services",
+      content: "",
+      html: GET_HTML(
         "Booking Cancelled",
         false,
         `Oxygen booking cancelled which is booked from ${bold(
@@ -263,8 +265,8 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
         )} for ${bold(
           record.patient_details.name
         )}.\n\nFor any query our helpline no. ${bold(record.org.helpline_no)}`
-      )
-    );
+      ),
+    });
 
     return res.status(200).json({ message: "Successful operation" });
   } catch (err) {
