@@ -6,11 +6,15 @@ const {
   _addVaccination,
   _editVaccination,
 } = require("../../utils/validationProps");
+const { GET_HTML, bold } = require("../../utils/template");
 const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
 const VaccinationModel = require("../../db/models/services/vaccination");
 const NotificationModel = require("../../db/models/notification");
 const ConfigModel = require("../../db/models/config");
+
+const EMAIL_JOB = require("../../worker/email");
+EMAIL_JOB.start();
 
 router.get("/", check_for_access_token, allowOrg, async (req, res) => {
   try {
@@ -276,6 +280,32 @@ router.post(
           vaccine_name,
         }
       );
+
+      const ret = await VaccinationModel.find({
+        batch_code,
+        org,
+        done: false,
+        booked: true,
+      }).populate(["patient", "org"]);
+
+      const emails = ret.map((item) => item.patient.email);
+
+      if (emails.length !== 0) {
+        EMAIL_JOB.push_email({
+          email: emails,
+          subject: "CoHelp Vaccination Services",
+          content: "",
+          html: GET_HTML(
+            "Rescheduled",
+            false,
+            `Your vaccination date is rescheduled to ${bold(
+              new Date(parseInt(vaccine_date)).toLocaleString()
+            )}.\n\nFor any query our helpline no. ${bold(
+              ret[0].org.helpline_no
+            )}`
+          ),
+        });
+      }
 
       return res.status(200).json({ message: "Successful operation" });
     } catch (err) {

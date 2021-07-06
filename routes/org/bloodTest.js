@@ -6,10 +6,14 @@ const {
   _addBloodTest,
   _editBloodTest,
 } = require("../../utils/validationProps");
+const { GET_HTML, bold } = require("../../utils/template");
 const UserModel = require("../../db/models/user");
 const OrgModel = require("../../db/models/org");
 const BloodTestModel = require("../../db/models/services/bloodTest");
 const ConfigModel = require("../../db/models/config");
+
+const EMAIL_JOB = require("../../worker/email");
+EMAIL_JOB.start();
 
 router.get("/", check_for_access_token, allowOrg, async (req, res) => {
   try {
@@ -226,6 +230,32 @@ router.post(
           date: test_date,
         }
       );
+
+      const ret = await BloodTestModel.find({
+        batch_code,
+        org,
+        done: false,
+        booked: true,
+      }).populate(["patient", "org"]);
+
+      const emails = ret.map((item) => item.patient.email);
+
+      if (emails.length !== 0) {
+        EMAIL_JOB.push_email({
+          email: emails,
+          subject: "CoHelp Blood Test Services",
+          content: "",
+          html: GET_HTML(
+            "Rescheduled",
+            false,
+            `Your test date is rescheduled to ${bold(
+              new Date(parseInt(test_date)).toLocaleString()
+            )}.\n\nFor any query our helpline no. ${bold(
+              ret[0].org.helpline_no
+            )}`
+          ),
+        });
+      }
 
       return res.status(200).json({ message: "Successful operation" });
     } catch (err) {
