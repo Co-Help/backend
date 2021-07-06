@@ -5,6 +5,8 @@ const AppointmentModel = require("../../db/models/services/appointment");
 const UserModel = require("../../db/models/user");
 const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
+const { sendMail } = require("../../utils/email");
+const { GET_HTML, bold } = require("../../utils/template");
 
 router.get("/", check_for_access_token, allowUser, async (req, res) => {
   try {
@@ -139,13 +141,35 @@ router.post("/", check_for_access_token, allowUser, async (req, res) => {
         booking_time: Date.now(),
         ...bookingConstrains,
       }
-    );
+    ).populate(["org", "doctor"]);
 
     if (!ret) {
       throw new ERROR("Slots of appointment is full.", 400, {
         free_slot: false,
       });
     }
+
+    await sendMail(
+      req.user.email,
+      "CoHelp Appointment Services",
+      "",
+      GET_HTML(
+        "Appointment Booked",
+        false,
+        `You successfully booked your appointment from ${bold(
+          ret.org.name
+        )}.\nAppointment Time : ${bold(
+          new Date(ret.appointment_date).toLocaleString()
+        )}\nDoctor : ${bold(
+          ret.doctor.name
+        )}\n\nFor any query, our helpline no. ${bold(ret.org.helpline_no)}`,
+        {
+          Name: bookingConstrains.patient_details.name,
+          Age: bookingConstrains.patient_details.age,
+          Mobile: bookingConstrains.patient_details.mobile_no,
+        }
+      )
+    );
 
     return res.status(200).json({
       message: "Successful operation",
@@ -181,11 +205,13 @@ router.post("/cancel", check_for_access_token, allowUser, async (req, res) => {
     const record = await AppointmentModel.findOne({
       _id: req.body?.id,
       patient: req.user.id,
-    });
+    }).populate("org");
     if (!record) throw new NOTFOUND("Model");
 
     const config = await ConfigModel.findOne({ batch_code: record.batch_code });
     if (!config) throw new NOTFOUND("Config");
+
+    const patient_name = record.patient_details.name;
 
     record.patient = null;
     record.booked = false;
@@ -195,6 +221,21 @@ router.post("/cancel", check_for_access_token, allowUser, async (req, res) => {
     record.appointment_date = config.date;
     record.info = config.info;
     await record.save();
+
+    await sendMail(
+      req.user.email,
+      "CoHelp Appointment Services",
+      "",
+      GET_HTML(
+        "Booking Cancelled",
+        false,
+        `Your Appointment booking cancelled which is booked from ${bold(
+          record.org.name
+        )} for ${bold(patient_name)}.\n\nFor any query our helpline no. ${bold(
+          record.org.helpline_no
+        )}`
+      )
+    );
 
     return res.status(200).json({
       message: "Successful operation",

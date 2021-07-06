@@ -8,6 +8,8 @@ const UserModel = require("../../db/models/user");
 const ServiceModel = require("../../db/models/services/oxygenProvide");
 const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
+const { sendMail } = require("../../utils/email");
+const { GET_HTML, bold } = require("../../utils/template");
 
 router.get("/", check_for_access_token, allowAll, async (req, res) => {
   try {
@@ -102,12 +104,40 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
       ...bookingConstrains,
     };
 
+    let tmp;
+
     for (let i = 0; i < quantity; i++) {
-      await ServiceModel.findOneAndUpdate(
+      const ret = await ServiceModel.findOneAndUpdate(
         { batch_code: req.body.batch_code, booked: false },
         update
-      );
+      ).populate(i === 0 ? "org" : "");
+
+      if (!ret && i === 0) {
+        throw new ERROR("Out of stock");
+      }
+
+      if (i === 0) {
+        tmp = ret;
+      }
     }
+
+    await sendMail(
+      req.user.email,
+      "CoHelp Oxygen Services",
+      "",
+      GET_HTML(
+        "Oxygen Booked",
+        false,
+        `You successfully booked oxygen from ${bold(
+          tmp.org.name
+        )}.\n\nFor any query, our helpline no. ${bold(tmp.org.helpline_no)}`,
+        {
+          Name: bookingConstrains.patient_details.name,
+          Age: bookingConstrains.patient_details.age,
+          Mobile: bookingConstrains.patient_details.mobile_no,
+        }
+      )
+    );
 
     return res.status(200).json({ message: "Successful operation" });
   } catch (err) {
@@ -199,7 +229,7 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
       booking_date: req.body.booking_date,
       done: false,
       buyer: user,
-    });
+    }).populate("org");
     if (!record) throw new NOTFOUND("Model");
 
     const config = await ConfigModel.findOne({ batch_code: record.batch_code });
@@ -220,6 +250,21 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
 
     if (!ret)
       throw new ERROR("Booked record not found or its already finished");
+
+    await sendMail(
+      req.user.email,
+      "CoHelp Oxygen Services",
+      "",
+      GET_HTML(
+        "Booking Cancelled",
+        false,
+        `Oxygen booking cancelled which is booked from ${bold(
+          record.org.name
+        )} for ${bold(
+          record.patient_details.name
+        )}.\n\nFor any query our helpline no. ${bold(record.org.helpline_no)}`
+      )
+    );
 
     return res.status(200).json({ message: "Successful operation" });
   } catch (err) {

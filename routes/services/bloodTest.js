@@ -8,6 +8,8 @@ const UserModel = require("../../db/models/user");
 const BloodTestModel = require("../../db/models/services/bloodTest");
 const ConfigModel = require("../../db/models/config");
 const { getBookingConstrains } = require("../../utils");
+const { sendMail } = require("../../utils/email");
+const { GET_HTML, bold } = require("../../utils/template");
 
 router.get("/", check_for_access_token, allowAll, async (req, res) => {
   try {
@@ -93,8 +95,36 @@ router.post("/", check_for_access_token, allowAll, async (req, res) => {
         booked: true,
         ...bookingConstrains,
       }
-    );
+    ).populate("org");
     if (!ret) throw new ERROR("Error Ocurred", 500, { err: ret });
+
+    await sendMail(
+      req.user.email,
+      "CoHelp Blood Test Services",
+      "",
+      GET_HTML(
+        "Successfully Booked",
+        false,
+        `You successfully booked your blood test from ${bold(
+          ret.org.name
+        )}.\nTest Time : ${bold(
+          new Date(ret.test_date).toLocaleString()
+        )}. \nPlace : ${bold(
+          ret.org.address.city +
+            ", " +
+            ret.org.address.district +
+            ", " +
+            ret.org.address.state +
+            ", " +
+            ret.org.address.pinCode
+        )}.\n\nFor any query our helpline no. ${bold(ret.org.helpline_no)}`,
+        {
+          Name: bookingConstrains.patient_details.name,
+          Age: bookingConstrains.patient_details.age,
+          Mobile: bookingConstrains.patient_details.mobile_no,
+        }
+      )
+    );
 
     return res.status(200).json({ message: "Successful operation" });
   } catch (err) {
@@ -137,11 +167,13 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
       _id: req.body.id,
       done: false,
       patient: user,
-    });
+    }).populate("org");
     if (!record) throw new NOTFOUND("Model");
 
     const config = await ConfigModel.findOne({ batch_code: record.batch_code });
     if (!config) throw new NOTFOUND("Config");
+
+    const patient_name = record.patient_details.name;
 
     record.patient = null;
     record.booked = false;
@@ -152,8 +184,20 @@ router.delete("/", check_for_access_token, allowAll, async (req, res) => {
     record.info = config.info;
     await record.save();
 
-    if (!record)
-      throw new ERROR("Booked record not found or its already finished");
+    await sendMail(
+      req.user.email,
+      "CoHelp Blood Test Services",
+      "",
+      GET_HTML(
+        "Booking Cancelled",
+        false,
+        `Your blood test booking cancelled which is booked from ${bold(
+          record.org.name
+        )} for ${bold(patient_name)}.\n\nFor any query our helpline no. ${bold(
+          record.org.helpline_no
+        )}`
+      )
+    );
 
     return res.status(200).json({ message: "Successful operation" });
   } catch (err) {
