@@ -6,7 +6,7 @@ const configSchema = Schema({
   cost: { type: SchemaTypes.Number, default: 0, required: true },
   date: { type: SchemaTypes.Date, default: Date.now() },
   batch_code: { type: SchemaTypes.String, required: true },
-  info: { type: SchemaTypes.String, required: true },
+  info: { type: SchemaTypes.String, default: "" },
   org: { type: SchemaTypes.ObjectId, ref: ORG_COLLECTION, required: true },
 
   // Only for oxygen provide
