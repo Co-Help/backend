@@ -6,7 +6,7 @@
 
 To run this project, you will need to add the following environment variables to your .env file
 
-`
+```
 PORT=5000
 CLIENT_ID=<GOOGLE_OAUTH2_WEB_APP_CLIENT_ID>
 ANDROID_CLIENT_ID=<GOOGLE_OAUTH2_ANDROID_APP_CLIENT_ID if you have otherwise put dummy>
@@ -32,7 +32,7 @@ MAIL_PASSWORD=<GMAIL_PASSWORD>
 CLIENT_REFRESH_TOKEN=xx
 CLIENT_ACCESS_TOKEN=xx
 JAGUAR_TOKEN_SECRET=xx
-`
+```
 
 ## Run Locally
 
